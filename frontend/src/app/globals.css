@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --color-light-grey: #eceff2;
+  --color-grey: #6f6f6f;
+  --color-red: #ed1c24;
+  --color-gold: #cb9a51;
+  --color-chinese-black: #101010;
+  --color-dark-grey: #212529;
+  --color-bright-grey: #ebeff2;
+  --color-oxford-blue: #0d1c4b;
+  --color-light-gray: #ddd;
+  --color-platinum: #e5e4e4;
+  --color-platinum-2: #dee2e6;
+  --color-grey-2: #444444;
+  --color-light-platinum: #f8f8f8;
+  --color-charcoal: #343837;
+  --font-poppins: var(--font-poppins);
+}
+
+@layer utility {
+  .small-text {
+    @apply text-[2vh] leading-[4vh];
+  }
+  .main-padding {
+    @apply p-5 lg:px-[60px];
+  }
+  .main-heading {
+    @apply mx-auto mb-3 w-fit text-2xl font-medium lg:mb-5 lg:text-[32px];
+  }
+  .main-container {
+    @apply mx-auto mt-20 w-full max-w-6xl;
+  }
+}
+
+.main-heading::after {
+  content: "";
+  display: block;
+  height: 2px;
+  width: 30%;
+  background-color: var(--color-red);
+  margin: 0 auto;
+  margin-top: 5px;
+}
+@media (min-width: 1024px) {
+  .main-heading::after {
+    height: calc(max(2px, 0.1vw));
+    margin-top: 0px;
+  }
+}
+.Marquee {
+  display: inline-block;
+  animation: marquee 10s linear infinite;
+}
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@custom-variant hover (&:hover);

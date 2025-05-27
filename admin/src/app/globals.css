@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Base colors */
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  /* Text and icon colors */
+  --color-base-color: #171717; /* Used for main text and icon colors */
+  --color-muted: #6b7280; /* For hover text or subdued UI elements */
+  --color-emphasis: #111827; /* For active or emphasized items */
+
+  /* Backgrounds */
+  --color-bg: #ffffff; /* Main background */
+  --color-secondary: #f3f4f6; /* Used for active link background */
+
+  /* Borders and overlays */
+  --color-secondary-border: #e5e7eb; /* Optional for subtle borders */
+  --color-overlay: rgba(0, 0, 0, 0.5); /* Overlay for mobile */
+
+  /* Optional shadows and accents */
+  --color-shadow: rgba(0, 0, 0, 0.1);
+}
+
+.MyContainer {
+  padding-top: 5%;
+  width: 90%;
+  max-width: 1440px;
+  box-sizing: border-box;
+  margin: auto;
+}
