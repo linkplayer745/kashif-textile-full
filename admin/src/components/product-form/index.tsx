@@ -1,10 +1,10 @@
 import type React from "react";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Plus, X, Upload, Trash2, ImageIcon } from "lucide-react";
+import { Plus, X, Upload, Trash2 } from "lucide-react";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
@@ -26,12 +26,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Product, Category, VariantOption } from "@/lib/types";
+import type { Product, VariantOption } from "@/lib/types";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { productApi } from "@/lib/product-api";
 import { useAppDispatch, useAppSelector } from "@/hooks/useStore";
 import { fetchCategories } from "@/redux/slices/categorySlice";
+import CategoryManagementDialog from "../category-management-dialog";
 
 const productSchema = z
   .object({
@@ -72,7 +73,6 @@ interface ProductFormProps {
   onCancel?: () => void;
 }
 
-// Define interfaces for stable keys
 interface AttributeItem {
   id: string;
   key: string;
@@ -383,7 +383,10 @@ export default function ProductForm({
                   name="categoryId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Category</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Category</FormLabel>
+                        <CategoryManagementDialog />
+                      </div>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}

@@ -23,12 +23,10 @@ export interface VariantOption {
 export interface Category {
   id: string;
   name: string;
-  slug?: string;
+  slug: string;
   description?: string;
   imageUrl: string;
   imagePublicId: string;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface AddCategoryRequest {

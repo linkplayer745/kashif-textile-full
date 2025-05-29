@@ -21,7 +21,7 @@ export const fetchProducts = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get("/admin/products");
-      return response.data;
+      return response.data.results;
     } catch (error: any) {
       return rejectWithValue(error.message || "Failed to fetch products");
     }
