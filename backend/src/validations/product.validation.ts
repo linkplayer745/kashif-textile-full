@@ -7,9 +7,9 @@ const variantOptionSchema = Joi.object({
   code: Joi.string().optional(),
 });
 
-const createProduct = {
+const addProduct = {
   body: Joi.object({
-    categoryId: Joi.string().hex().length(24).required(),
+    categoryId: Joi.string().hex().length(24).optional(),
     name: Joi.string().required(),
     price: Joi.number().min(0).required(),
     discountedPrice: Joi.number().min(0).optional(),
@@ -22,7 +22,7 @@ const createProduct = {
 };
 
 const productValidation = {
-  createProduct,
+  addProduct,
 };
 
 export default productValidation;

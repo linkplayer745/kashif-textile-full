@@ -3,7 +3,7 @@ import catchAsync from '../utils/catchAsync';
 import { Request, Response } from 'express';
 import ApiError from '../utils/apiError';
 import httpStatus from 'http-status';
-import { categoryService, cloudnaryService } from '../services';
+import { categoryService, cloudinaryService } from '../services';
 
 export const addCategory = catchAsync(async (req: Request, res: Response) => {
   // const { name, slug, description } = req.body;
@@ -11,7 +11,7 @@ export const addCategory = catchAsync(async (req: Request, res: Response) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Image file is required');
   }
 
-  const { public_id, secure_url } = await cloudnaryService.uploadToCloudinary(
+  const { public_id, secure_url } = await cloudinaryService.uploadToCloudinary(
     req.file.buffer,
     'categories',
   );

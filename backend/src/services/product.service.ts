@@ -3,6 +3,7 @@ import { IProduct } from '../models/product.model';
 import httpStatus from 'http-status';
 import ApiError from '../utils/apiError';
 import cloudinaryService from './cloudinary.service';
+import { Category } from '../models';
 
 const addProduct = async (
   productData: Omit<IProduct, 'images'>,
@@ -14,22 +15,122 @@ const addProduct = async (
       'At least one image is required',
     );
   }
+  if (productData.categoryId) {
+    const categoryExists = await Category.findById(productData.categoryId);
+    if (!categoryExists) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid category ID');
+    }
+  }
+  if (typeof productData.attributes === 'string') {
+    productData = {
+      ...productData,
+      attributes: JSON.parse(productData.attributes as unknown as string),
+    };
+  }
 
-  const imageUploadPromises = imageBuffers.map((file) =>
-    cloudinaryService.uploadToCloudinary(file.buffer, 'products'),
-  );
+  if (typeof productData.variants === 'string') {
+    productData = {
+      ...productData,
+      variants: JSON.parse(productData.variants as unknown as string),
+    };
+  }
+  let uploadedImages: { public_id: string; secure_url: string }[] = [];
 
-  const uploadedImages = await Promise.all(imageUploadPromises);
-  const imageUrls = uploadedImages.map((img: any) => img.secure_url);
+  try {
+    uploadedImages = await Promise.all(
+      imageBuffers.map((file) =>
+        cloudinaryService.uploadToCloudinary(file.buffer, 'products'),
+      ),
+    );
 
-  const product = await Product.create({
-    ...productData,
-    images: imageUrls,
-  });
+    const imageUrls = uploadedImages.map((img) => img.secure_url);
+
+    const product = await Product.create({
+      ...productData,
+      images: imageUrls,
+    });
+
+    return product;
+  } catch (error) {
+    if (uploadedImages.length > 0) {
+      await Promise.all(
+        uploadedImages.map((img) =>
+          cloudinaryService.deleteImage(img.public_id),
+        ),
+      );
+    }
+    console.log(error);
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      'Failed to create product. Cleanup performed.',
+    );
+  }
+};
+const updateProduct = async (
+  productId: string,
+  updateData: Partial<IProduct>,
+  imageBuffers?: Express.Multer.File[],
+) => {
+  const product = await Product.findById(productId);
+
+  if (!product) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
+  }
+
+  if (updateData.categoryId) {
+    const categoryExists = await Category.findById(updateData.categoryId);
+    if (!categoryExists) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid category ID');
+    }
+  }
+
+  if (typeof updateData.attributes === 'string') {
+    updateData.attributes = JSON.parse(
+      updateData.attributes as unknown as string,
+    );
+  }
+  if (typeof updateData.variants === 'string') {
+    updateData = {
+      ...updateData,
+      variants: JSON.parse(updateData.variants as unknown as string),
+    };
+  }
+  if (imageBuffers && imageBuffers.length > 0) {
+    const uploadedImages = await Promise.all(
+      imageBuffers.map((file) =>
+        cloudinaryService.uploadToCloudinary(file.buffer, 'products'),
+      ),
+    );
+
+    const newImageUrls = uploadedImages.map((img) => img.secure_url);
+
+    await Promise.all(
+      product.images.map(async (url) => {
+        const publicIdMatch = url.match(/\/([^/]+)\.\w+$/);
+        if (publicIdMatch) {
+          const publicId = `products/${publicIdMatch[1]}`;
+          await cloudinaryService.deleteImage(publicId);
+        }
+      }),
+    );
+
+    updateData.images = newImageUrls;
+  }
+
+  // Update the product document
+  Object.assign(product, updateData);
+  await product.save();
 
   return product;
 };
 
+const getProducts = async () => {
+  const products = await Product.find();
+  return products;
+};
+
 export default {
+  getProducts,
   addProduct,
+  updateProduct,
 };

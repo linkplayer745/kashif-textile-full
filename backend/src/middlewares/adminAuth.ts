@@ -66,8 +66,7 @@ const adminAuth = async (req: Request, res: Response, next: NextFunction) => {
     if (error instanceof jwt.JsonWebTokenError) {
       return next(new ApiError(httpStatus.UNAUTHORIZED, 'InvalidToken'));
     }
-
-    return next(new ApiError(httpStatus.UNAUTHORIZED, 'Unauthorized'));
+    return next(error);
   }
 };
 export default adminAuth;
