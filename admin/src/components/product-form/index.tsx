@@ -43,7 +43,7 @@ const productSchema = z
       .min(0, "Discounted price must be non-negative")
       .optional(),
     description: z.string().optional(),
-    categoryId: z.string().optional(),
+    categoryId: z.string().min(1, "Category is required"),
     attributes: z.record(z.string()).optional(),
     variants: z
       .record(
@@ -97,7 +97,6 @@ export default function ProductForm({
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Use arrays with stable IDs instead of objects with dynamic keys
   const [attributes, setAttributes] = useState<AttributeItem[]>([]);
   const [variants, setVariants] = useState<VariantItem[]>([]);
 
