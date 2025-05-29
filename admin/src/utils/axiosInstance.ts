@@ -1,20 +1,24 @@
-import axios from "axios";
-import router from "next/router";
+"use client";
 
+import axios from "axios";
+
+// Create Axios instance
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BASE_URL,
 });
 
-// Add request interceptor to attach token
+// Request Interceptor
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });
 
-// Add response interceptor to handle expired token
+// Response Interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -22,10 +26,15 @@ api.interceptors.response.use(
 
     if (
       error.response?.status === 401 &&
-      (message === "TokenExpired" || message === "InvalidToken")
+      (message === "TokenExpired" ||
+        message === "InvalidToken" ||
+        message === "Authorization header missing or malformed")
     ) {
-      localStorage.removeItem("token");
-      router.push("/login");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+
+        window.location.href = "/login";
+      }
     }
 
     return Promise.reject(error);

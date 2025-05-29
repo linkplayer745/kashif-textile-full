@@ -33,7 +33,7 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(data.message || "Login failed");
 
       localStorage.setItem("token", data.token);
-      router.push("/admin/dashboard");
+      router.push("/dashboard");
     } catch (error: any) {
       console.error("Login failed:", error.message);
     }
