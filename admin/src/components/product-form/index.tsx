@@ -1,12 +1,10 @@
-"use client";
-
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Plus, X, Upload, Trash2 } from "lucide-react";
+import { Plus, X, Upload, Trash2, ImageIcon } from "lucide-react";
 import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
@@ -62,7 +60,7 @@ const productSchema = z
       data.discountedPrice === undefined || data.discountedPrice < data.price,
     {
       message: "Discounted price must be less than the original price",
-      path: ["discountedPrice"], // This makes the error appear on the correct field
+      path: ["discountedPrice"],
     },
   );
 
@@ -72,6 +70,19 @@ interface ProductFormProps {
   product?: Product;
   onSuccess?: () => void;
   onCancel?: () => void;
+}
+
+// Define interfaces for stable keys
+interface AttributeItem {
+  id: string;
+  key: string;
+  value: string;
+}
+
+interface VariantItem {
+  id: string;
+  key: string;
+  options: VariantOption[];
 }
 
 export default function ProductForm({
@@ -85,8 +96,10 @@ export default function ProductForm({
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [attributes, setAttributes] = useState<Record<string, string>>({});
-  const [variants, setVariants] = useState<Record<string, VariantOption[]>>({});
+
+  // Use arrays with stable IDs instead of objects with dynamic keys
+  const [attributes, setAttributes] = useState<AttributeItem[]>([]);
+  const [variants, setVariants] = useState<VariantItem[]>([]);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -97,7 +110,6 @@ export default function ProductForm({
         typeof product?.discountedPrice === "number"
           ? product.discountedPrice
           : undefined,
-
       description: product?.description || "",
       categoryId: product?.categoryId || "",
       attributes: product?.attributes || {},
@@ -108,13 +120,46 @@ export default function ProductForm({
   useEffect(() => {
     loadCategories();
     if (product) {
-      setAttributes(product.attributes || {});
-      setVariants(product.variants || {});
+      // Convert product attributes to AttributeItem array
+      if (product.attributes) {
+        const attributeItems: AttributeItem[] = Object.entries(
+          product.attributes,
+        ).map(([key, value], index) => ({
+          id: `attr_${index}_${Date.now()}`,
+          key,
+          value,
+        }));
+        setAttributes(attributeItems);
+      }
+
+      // Convert product variants to VariantItem array
+      if (product.variants) {
+        const variantItems: VariantItem[] = Object.entries(
+          product.variants,
+        ).map(([key, options], index) => ({
+          id: `variant_${index}_${Date.now()}`,
+          key,
+          options,
+        }));
+        setVariants(variantItems);
+      }
+
       if (product.images) {
         setImagePreviewUrls(product.images);
       }
     }
   }, [product]);
+
+  // Cleanup object URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      imagePreviewUrls.forEach((url) => {
+        if (url.startsWith("blob:")) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, [imagePreviewUrls]);
 
   const loadCategories = async () => {
     try {
@@ -128,11 +173,18 @@ export default function ProductForm({
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setImages(files);
 
-    // Create preview URLs
-    const urls = files.map((file) => URL.createObjectURL(file));
-    setImagePreviewUrls(urls);
+    // Add new files to existing ones
+    const newImages = [...images, ...files];
+    setImages(newImages);
+
+    // Create preview URLs for all files
+    const newUrls = files.map((file) => URL.createObjectURL(file));
+    const allUrls = [...imagePreviewUrls, ...newUrls];
+    setImagePreviewUrls(allUrls);
+
+    // Reset the input value to allow selecting the same files again
+    e.target.value = "";
   };
 
   const removeImage = (index: number) => {
@@ -143,81 +195,99 @@ export default function ProductForm({
   };
 
   const addAttribute = () => {
-    const key = `attribute_${Date.now()}`;
-    setAttributes((prev) => ({ ...prev, [key]: "" }));
+    const newAttribute: AttributeItem = {
+      id: `attr_${Date.now()}`,
+      key: "",
+      value: "",
+    };
+    setAttributes((prev) => [...prev, newAttribute]);
   };
 
-  const updateAttribute = (oldKey: string, newKey: string, value: string) => {
-    setAttributes((prev) => {
-      const updated = { ...prev };
-      if (oldKey !== newKey) {
-        delete updated[oldKey];
-      }
-      updated[newKey] = value;
-      return updated;
-    });
+  const updateAttributeKey = (id: string, newKey: string) => {
+    setAttributes((prev) =>
+      prev.map((attr) => (attr.id === id ? { ...attr, key: newKey } : attr)),
+    );
   };
 
-  const removeAttribute = (key: string) => {
-    setAttributes((prev) => {
-      const updated = { ...prev };
-      delete updated[key];
-      return updated;
-    });
+  const updateAttributeValue = (id: string, newValue: string) => {
+    setAttributes((prev) =>
+      prev.map((attr) =>
+        attr.id === id ? { ...attr, value: newValue } : attr,
+      ),
+    );
+  };
+
+  const removeAttribute = (id: string) => {
+    setAttributes((prev) => prev.filter((attr) => attr.id !== id));
   };
 
   const addVariant = () => {
-    const key = `variant_${Date.now()}`;
-    setVariants((prev) => ({ ...prev, [key]: [{ name: "", code: "" }] }));
+    const newVariant: VariantItem = {
+      id: `variant_${Date.now()}`,
+      key: "",
+      options: [{ name: "", code: "" }],
+    };
+    setVariants((prev) => [...prev, newVariant]);
   };
 
-  const updateVariantKey = (oldKey: string, newKey: string) => {
-    setVariants((prev) => {
-      const updated = { ...prev };
-      updated[newKey] = updated[oldKey];
-      if (oldKey !== newKey) {
-        delete updated[oldKey];
-      }
-      return updated;
-    });
+  const updateVariantKey = (id: string, newKey: string) => {
+    setVariants((prev) =>
+      prev.map((variant) =>
+        variant.id === id ? { ...variant, key: newKey } : variant,
+      ),
+    );
   };
 
-  const addVariantOption = (variantKey: string) => {
-    setVariants((prev) => ({
-      ...prev,
-      [variantKey]: [...(prev[variantKey] || []), { name: "", code: "" }],
-    }));
+  const addVariantOption = (variantId: string) => {
+    setVariants((prev) =>
+      prev.map((variant) =>
+        variant.id === variantId
+          ? {
+              ...variant,
+              options: [...variant.options, { name: "", code: "" }],
+            }
+          : variant,
+      ),
+    );
   };
 
   const updateVariantOption = (
-    variantKey: string,
+    variantId: string,
     optionIndex: number,
     field: "name" | "code",
     value: string,
   ) => {
-    setVariants((prev) => ({
-      ...prev,
-      [variantKey]: prev[variantKey].map((option, index) =>
-        index === optionIndex ? { ...option, [field]: value } : option,
+    setVariants((prev) =>
+      prev.map((variant) =>
+        variant.id === variantId
+          ? {
+              ...variant,
+              options: variant.options.map((option, index) =>
+                index === optionIndex ? { ...option, [field]: value } : option,
+              ),
+            }
+          : variant,
       ),
-    }));
+    );
   };
 
-  const removeVariantOption = (variantKey: string, optionIndex: number) => {
-    setVariants((prev) => ({
-      ...prev,
-      [variantKey]: prev[variantKey].filter(
-        (_, index) => index !== optionIndex,
+  const removeVariantOption = (variantId: string, optionIndex: number) => {
+    setVariants((prev) =>
+      prev.map((variant) =>
+        variant.id === variantId
+          ? {
+              ...variant,
+              options: variant.options.filter(
+                (_, index) => index !== optionIndex,
+              ),
+            }
+          : variant,
       ),
-    }));
+    );
   };
 
-  const removeVariant = (variantKey: string) => {
-    setVariants((prev) => {
-      const updated = { ...prev };
-      delete updated[variantKey];
-      return updated;
-    });
+  const removeVariant = (id: string) => {
+    setVariants((prev) => prev.filter((variant) => variant.id !== id));
   };
 
   const onSubmit = async (data: ProductFormData) => {
@@ -230,10 +300,33 @@ export default function ProductForm({
 
     setIsLoading(true);
     try {
+      // Convert attributes array back to object
+      const attributesObj = attributes.reduce(
+        (acc, attr) => {
+          if (attr.key.trim()) {
+            acc[attr.key] = attr.value;
+          }
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+
+      // Convert variants array back to object
+      const variantsObj = variants.reduce(
+        (acc, variant) => {
+          if (variant.key.trim()) {
+            acc[variant.key] = variant.options;
+          }
+          return acc;
+        },
+        {} as Record<string, VariantOption[]>,
+      );
+
       const productData = {
         ...data,
-        attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
-        variants: Object.keys(variants).length > 0 ? variants : undefined,
+        attributes:
+          Object.keys(attributesObj).length > 0 ? attributesObj : undefined,
+        variants: Object.keys(variantsObj).length > 0 ? variantsObj : undefined,
       };
 
       if (product) {
@@ -250,7 +343,7 @@ export default function ProductForm({
 
       onSuccess?.();
     } catch (error: any) {
-      toast("Error", {
+      toast.error("Error", {
         description: error.response?.data?.message || "Failed to save product",
       });
     } finally {
@@ -293,7 +386,7 @@ export default function ProductForm({
                       <FormLabel>Category</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -350,14 +443,14 @@ export default function ProductForm({
                           step="0.01"
                           min={0}
                           placeholder="0.00"
-                          {...field}
-                          onChange={(e) =>
-                            field.onChange(
-                              e.target.value
-                                ? Number.parseFloat(e.target.value)
-                                : undefined,
-                            )
-                          }
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            const value = e.target.value
+                              ? Number.parseFloat(e.target.value)
+                              : undefined;
+                            if (value !== undefined && value < 0) return;
+                            field.onChange(value);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -449,27 +542,27 @@ export default function ProductForm({
                   </Button>
                 </div>
 
-                {Object.entries(attributes).map(([key, value]) => (
-                  <div key={key} className="flex items-center gap-2">
+                {attributes.map((attribute) => (
+                  <div key={attribute.id} className="flex items-center gap-2">
                     <Input
                       placeholder="Attribute name"
-                      value={key.startsWith("attribute_") ? "" : key}
+                      value={attribute.key}
                       onChange={(e) =>
-                        updateAttribute(key, e.target.value, value)
+                        updateAttributeKey(attribute.id, e.target.value)
                       }
                     />
                     <Input
                       placeholder="Attribute value"
-                      value={value}
+                      value={attribute.value}
                       onChange={(e) =>
-                        updateAttribute(key, key, e.target.value)
+                        updateAttributeValue(attribute.id, e.target.value)
                       }
                     />
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => removeAttribute(key)}
+                      onClick={() => removeAttribute(attribute.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -492,27 +585,23 @@ export default function ProductForm({
                   </Button>
                 </div>
 
-                {Object.entries(variants).map(([variantKey, options]) => (
-                  <Card key={variantKey}>
+                {variants.map((variant) => (
+                  <Card key={variant.id}>
                     <CardContent className="pt-4">
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
                           <Input
                             placeholder="Variant name (e.g., Color, Size)"
-                            value={
-                              variantKey.startsWith("variant_")
-                                ? ""
-                                : variantKey
-                            }
+                            value={variant.key}
                             onChange={(e) =>
-                              updateVariantKey(variantKey, e.target.value)
+                              updateVariantKey(variant.id, e.target.value)
                             }
                           />
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => addVariantOption(variantKey)}
+                            onClick={() => addVariantOption(variant.id)}
                           >
                             <Plus className="h-4 w-4" />
                           </Button>
@@ -520,13 +609,13 @@ export default function ProductForm({
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => removeVariant(variantKey)}
+                            onClick={() => removeVariant(variant.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
 
-                        {options.map((option, optionIndex) => (
+                        {variant.options.map((option, optionIndex) => (
                           <div
                             key={optionIndex}
                             className="ml-4 flex items-center gap-2"
@@ -536,7 +625,7 @@ export default function ProductForm({
                               value={option.name}
                               onChange={(e) =>
                                 updateVariantOption(
-                                  variantKey,
+                                  variant.id,
                                   optionIndex,
                                   "name",
                                   e.target.value,
@@ -548,7 +637,7 @@ export default function ProductForm({
                               value={option.code || ""}
                               onChange={(e) =>
                                 updateVariantOption(
-                                  variantKey,
+                                  variant.id,
                                   optionIndex,
                                   "code",
                                   e.target.value,
@@ -560,7 +649,7 @@ export default function ProductForm({
                               variant="outline"
                               size="sm"
                               onClick={() =>
-                                removeVariantOption(variantKey, optionIndex)
+                                removeVariantOption(variant.id, optionIndex)
                               }
                             >
                               <X className="h-4 w-4" />
@@ -575,7 +664,11 @@ export default function ProductForm({
 
               {/* Form Actions */}
               <div className="flex gap-4 pt-6">
-                <Button type="submit" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="min-w-[120px]"
+                >
                   {isLoading
                     ? "Saving..."
                     : product

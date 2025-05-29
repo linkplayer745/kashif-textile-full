@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,10 +17,15 @@ import api from "@/utils/axiosInstance";
 import { toast } from "sonner";
 import Image from "next/image";
 import { useAppDispatch, useAppSelector } from "@/hooks/useStore";
-import { fetchProducts, setSelectedProduct } from "@/redux/slices/productSlice";
+import {
+  deleteProduct,
+  fetchProducts,
+  setSelectedProduct,
+} from "@/redux/slices/productSlice";
 import { Product } from "@/lib/types";
 
 export default function ProductsPage() {
+  const categories = useAppSelector((state) => state.category.categories);
   const { products, error, isLoading } = useAppSelector(
     (state) => state.product,
   );
@@ -44,13 +49,13 @@ export default function ProductsPage() {
   const onSelectProduct = (product: Product) => {
     dispatch(setSelectedProduct(product));
   };
-  const deleteProduct = async (productId: string) => {
+  const onDeleteProduct = async (productId: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
     try {
-      await api.delete(`/product/${productId}`);
+      const deletedProduct = await api.delete(`/admin/product/${productId}`);
       toast("Product deleted successfully");
-      loadProducts();
+      dispatch(deleteProduct(deletedProduct.data.id));
     } catch (error) {
       toast.error("Error", {
         description: "Failed to delete product",
@@ -106,13 +111,16 @@ export default function ProductsPage() {
                     />
                   </TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell>${product.price}</TableCell>
+                  <TableCell>Rs.{product.price}</TableCell>
                   <TableCell>
                     {product.discountedPrice
-                      ? `$${product.discountedPrice}`
+                      ? `Rs.${product.discountedPrice}`
                       : "-"}
                   </TableCell>
-                  <TableCell>{product.categoryId || "-"}</TableCell>
+                  <TableCell>
+                    {categories.find((c) => c.id === product.categoryId)
+                      ?.name || "-"}
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Link href={`/products/edit/${product.id}`}>
@@ -127,7 +135,7 @@ export default function ProductsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => deleteProduct(product.id!)}
+                        onClick={() => onDeleteProduct(product.id!)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

@@ -35,6 +35,11 @@ export const productsSlice = createSlice({
     setSelectedProduct: (state, action) => {
       state.selectedProduct = action.payload;
     },
+    deleteProduct: (state, action) => {
+      state.products = state.products.filter(
+        (product) => product.id !== action.payload,
+      );
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -53,6 +58,6 @@ export const productsSlice = createSlice({
   },
 });
 
-export const { setSelectedProduct } = productsSlice.actions;
+export const { setSelectedProduct, deleteProduct } = productsSlice.actions;
 
 export default productsSlice.reducer;

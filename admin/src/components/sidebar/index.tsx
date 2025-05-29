@@ -4,12 +4,8 @@ import {
   BarChart,
   Menu,
   X,
-  TrendingUp,
-  Users,
-  Utensils,
-  UtensilsCrossedIcon,
+  AlignJustify,
   UtensilsIcon,
-  MailOpenIcon,
   ShoppingBag,
 } from "lucide-react";
 import Link from "next/link";
@@ -66,6 +62,7 @@ export default function AdminSidebar() {
               { name: "Dashboard", icon: BarChart, id: "dashboard" },
               { name: "Orders", icon: UtensilsIcon, id: "orders" },
               { name: "Products", icon: ShoppingBag, id: "products" },
+              { name: "Categories", icon: AlignJustify, id: "categories" },
             ].map((item) => {
               const isActive = pathname.includes(`/${item.id}`);
               return (
