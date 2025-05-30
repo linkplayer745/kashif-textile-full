@@ -4,6 +4,7 @@ import categoryRoute from './category.route';
 import cartRoute from './cart.route';
 import orderRoute from './order.route';
 import adminRoute from './admin.route';
+import productsRoute from './products.route';
 const router = express.Router();
 
 const defaultRoutes = [
@@ -26,6 +27,10 @@ const defaultRoutes = [
   {
     path: '/admin',
     route: adminRoute,
+  },
+  {
+    path: '/products',
+    route: productsRoute,
   },
 ];
 

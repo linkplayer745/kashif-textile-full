@@ -4,6 +4,7 @@ import httpStatus from 'http-status';
 import ApiError from '../utils/apiError';
 import cloudinaryService from './cloudinary.service';
 import { Category } from '../models';
+import { Request } from 'express';
 
 const addProduct = async (
   productData: Omit<IProduct, 'images'>,
@@ -124,13 +125,65 @@ const updateProduct = async (
   return product;
 };
 
-const getProducts = async () => {
-  const products = await Product.find();
+import { pick } from '../utils/pick';
+
+const getProducts = async (req: Request) => {
+  const searchTerm = req.query.searchTerm as string;
+  const nameFilter = searchTerm
+    ? { name: { $regex: new RegExp(searchTerm, 'i') } }
+    : {};
+  const categoryId = req.query.categoryId as string;
+
+  const categoryFilter = categoryId ? { categoryId } : {};
+
+  const filter = { ...nameFilter, ...categoryFilter };
+
+  const options = pick(req.query, ['sortBy', 'limit', 'page']);
+
+  const result = await Product.paginate(filter, options);
+  return result;
+};
+
+const getProductByCategory = async (req: Request) => {
+  const slug = req.params.category;
+  const searchTerm = req.query.searchTerm as string;
+  const nameFilter = searchTerm
+    ? { name: { $regex: new RegExp(searchTerm, 'i') } }
+    : {};
+  const options = pick(req.query, ['sortBy', 'limit', 'page']);
+
+  const category = await Category.findOne({ slug });
+  if (!category) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Category not found');
+  }
+  const products = await Product.paginate(
+    { categoryId: category._id, ...nameFilter },
+    options,
+  );
   return products;
+};
+const deleteProduct = async (productId: string) => {
+  const product = await Product.findByIdAndDelete(productId);
+  if (!product) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
+  }
+  return product;
+};
+
+const getProductBySlug = async (req: Request) => {
+  const slug = req.params.slug;
+  const product = await Product.findOne({ slug });
+  if (!product) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
+  }
+  return product;
 };
 
 export default {
+  getProductBySlug,
+  getProductByCategory,
   getProducts,
   addProduct,
   updateProduct,
+  deleteProduct,
 };

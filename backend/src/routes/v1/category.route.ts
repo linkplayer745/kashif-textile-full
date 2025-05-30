@@ -1,21 +1,30 @@
 import express from 'express';
-import auth from '../../middlewares/auth';
 import { memoryUpload } from '../../middlewares/upload';
 import { validate } from '../../middlewares/validate';
 import categoryValidation from '../../validations/category.validation';
 import categoryController from '../../controllers/category.controller';
+import adminAuth from '../../middlewares/adminAuth';
 
 const router = express.Router();
 
 router.post(
   '/',
-  auth,
+  adminAuth,
   validate(categoryValidation.addCategory),
   memoryUpload.single('image'),
   categoryController.addCategory,
 );
 
-router.get('/', categoryController.getCategories);
-router.delete('/:categoryId', auth, categoryController.deleteCategory);
+router.get('/all', categoryController.getCategories);
+
+router
+  .route('/:categoryId')
+  .patch(
+    adminAuth,
+    validate(categoryValidation.updateCategory),
+    memoryUpload.single('image'),
+    categoryController.updateCategory,
+  )
+  .delete(adminAuth, categoryController.deleteCategory);
 
 export default router;

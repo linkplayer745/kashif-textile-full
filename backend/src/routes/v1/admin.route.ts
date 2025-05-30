@@ -18,12 +18,9 @@ router.post(
   adminController.addProduct,
 );
 
-router.patch(
-  '/product/:productId',
-  adminAuth,
-  memoryUpload.array('images'),
-  adminController.updateProduct,
-);
-
+router
+  .route('/product/:productId')
+  .patch(adminAuth, memoryUpload.array('images'), adminController.updateProduct)
+  .delete(adminAuth, adminController.deleteProduct);
 router.get('/products', adminAuth, adminController.getProducts);
 export default router;

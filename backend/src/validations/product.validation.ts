@@ -9,7 +9,7 @@ const variantOptionSchema = Joi.object({
 
 const addProduct = {
   body: Joi.object({
-    categoryId: Joi.string().hex().length(24).optional(),
+    categoryId: Joi.string().hex().length(24).required(),
     name: Joi.string().required(),
     price: Joi.number().min(0).required(),
     discountedPrice: Joi.number().min(0).optional(),

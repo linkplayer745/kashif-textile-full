@@ -36,15 +36,21 @@ const updateProduct = catchAsync(async (req, res) => {
 });
 
 const getProducts = catchAsync(async (req, res) => {
-  const products = await productService.getProducts();
-  res.status(httpStatus.OK).json(products);
+  const result = await productService.getProducts(req);
+  res.status(httpStatus.OK).send(result);
 });
 
+const deleteProduct = catchAsync(async (req, res) => {
+  const { productId } = req.params;
+  const deletedProduct = await productService.deleteProduct(productId);
+  res.status(httpStatus.OK).json(deletedProduct);
+});
 const adminController = {
   login,
   getProducts,
   addProduct,
   updateProduct,
+  deleteProduct,
 };
 
 export default adminController;

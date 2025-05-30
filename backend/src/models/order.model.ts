@@ -2,6 +2,7 @@
 
 import mongoose, { Document, Model, Schema, Types } from 'mongoose';
 import toJSON from './plugins/toJSON.plugin';
+import paginate from './plugins/pagination.plugin';
 
 //
 // 1. Sub-schemas & interfaces
@@ -50,7 +51,9 @@ export interface IOrder {
 }
 
 export interface IOrderDocument extends IOrder, Document {}
-export interface IOrderModel extends Model<IOrderDocument> {}
+export interface IOrderModel extends Model<IOrderDocument> {
+  paginate(filter: Record<string, any>, options: Record<string, any>): any;
+}
 
 //
 // 2. Define sub-schemas
@@ -111,6 +114,8 @@ const orderSchema = new Schema<IOrderDocument, IOrderModel>(
   },
 );
 orderSchema.plugin(toJSON);
+orderSchema.plugin(paginate);
+
 export const Order = mongoose.model<IOrderDocument, IOrderModel>(
   'Order',
   orderSchema,

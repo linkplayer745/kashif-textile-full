@@ -1,6 +1,7 @@
 import mongoose, { Document, Model, Schema, Types } from 'mongoose';
 import { Product } from './index';
 import toJSON from './plugins/toJSON.plugin';
+import paginate from './plugins/pagination.plugin';
 export interface ICategory {
   name: string;
   slug: string;
@@ -15,6 +16,7 @@ export interface ICategoryDocument extends ICategory, Document {
 
 export interface ICategoryModel extends Model<ICategoryDocument> {
   findByName(name: string): Promise<ICategoryDocument | null>;
+  paginate(filter: object, options: object): Promise<ICategoryDocument[]>;
 }
 
 //
@@ -34,6 +36,7 @@ const categorySchema = new Schema<ICategoryDocument, ICategoryModel>(
       required: true,
       unique: true,
       lowercase: true,
+      match: /^[a-z0-9-]+$/,
       trim: true,
       index: true,
     },
@@ -70,6 +73,7 @@ categorySchema.pre('deleteOne', async function (this: ICategoryDocument, next) {
 });
 
 categorySchema.plugin(toJSON);
+categorySchema.plugin(paginate);
 
 export const Category = mongoose.model<ICategoryDocument, ICategoryModel>(
   'Category',

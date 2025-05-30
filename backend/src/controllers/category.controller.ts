@@ -4,9 +4,9 @@ import { Request, Response } from 'express';
 import ApiError from '../utils/apiError';
 import httpStatus from 'http-status';
 import { categoryService, cloudinaryService } from '../services';
+import { pick } from '../utils/pick';
 
 export const addCategory = catchAsync(async (req: Request, res: Response) => {
-  // const { name, slug, description } = req.body;
   if (!req.file) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Image file is required');
   }
@@ -28,10 +28,17 @@ export const addCategory = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getCategories = catchAsync(async (req: Request, res: Response) => {
-  const categories = await categoryService.getCategories();
-  res.status(httpStatus.OK).send({
-    categories,
-  });
+  const searchTerm = req.query.searchTerm as string;
+  const nameFilter = searchTerm
+    ? { name: { $regex: new RegExp(searchTerm, 'i') } }
+    : {};
+
+  const filter = { ...nameFilter };
+
+  const options = pick(req.query, ['sortBy', 'limit', 'page']);
+
+  const categories = await categoryService.getCategories(filter, options);
+  res.status(httpStatus.OK).send(categories);
 });
 
 const deleteCategory = catchAsync(async (req: Request, res: Response) => {
@@ -42,7 +49,25 @@ const deleteCategory = catchAsync(async (req: Request, res: Response) => {
     category,
   });
 });
+
+const updateCategory = catchAsync(async (req: Request, res: Response) => {
+  const { categoryId } = req.params;
+  const payload = req.body;
+  const imageFile = req.file;
+
+  const category = await categoryService.updateCategory(
+    categoryId,
+    payload,
+    imageFile,
+  );
+
+  res.status(httpStatus.OK).send({
+    category,
+  });
+});
+
 const categoryController = {
+  updateCategory,
   addCategory,
   getCategories,
   deleteCategory,

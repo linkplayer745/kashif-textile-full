@@ -7,6 +7,14 @@ export interface IUser {
   email: string;
   password: string;
   isBlocked: boolean;
+  details: {
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    country: string;
+    postalCode: string;
+  };
 }
 
 export interface IUserDocument extends IUser, Document {
@@ -45,6 +53,17 @@ const userSchema = new mongoose.Schema<IUserDocument, IUserModel>(
     isBlocked: {
       type: Boolean,
       default: false,
+    },
+    details: {
+      type: Object,
+      properties: {
+        phone: { type: String },
+        address: { type: String },
+        city: { type: String },
+        state: { type: String },
+        country: { type: String },
+        postalCode: { type: String },
+      },
     },
   },
   {

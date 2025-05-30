@@ -82,20 +82,21 @@ const createOrder = async (dto: CreateOrderDto): Promise<IOrderDocument> => {
   return Order.create(payload);
 };
 
-const getOrdersByUserId = async (userId: string): Promise<IOrderDocument[]> => {
-  if (!Types.ObjectId.isValid(userId)) {
-    throw new Error('Invalid userId');
-  }
-
-  const objectId = new Types.ObjectId(userId);
-
-  const orders = await Order.find({ user: objectId }).sort({ createdAt: -1 });
-  console.log('orders', orders);
+const getOrdersByUserId = async (
+  filters: object,
+  options: object,
+): Promise<IOrderDocument[]> => {
+  const orders = await Order.paginate(filters, options);
+  // .find({ user: objectId }).sort({ createdAt: -1 });
   return orders;
 };
 
-const getOrders = async (): Promise<IOrderDocument[]> => {
-  const orders = await Order.find().sort({ createdAt: -1 });
+const getOrders = async (
+  filters: object,
+  options: object,
+): Promise<IOrderDocument[]> => {
+  // const orders = await Order.find().sort({ createdAt: -1 });
+  const orders = await Order.paginate(filters, options);
   return orders;
 };
 

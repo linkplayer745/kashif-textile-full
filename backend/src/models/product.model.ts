@@ -1,5 +1,6 @@
 import mongoose, { Document, Model } from 'mongoose';
 import toJSON from './plugins/toJSON.plugin';
+import paginate from './plugins/pagination.plugin';
 
 // Interface for a single variant option
 export interface IVariantOption {
@@ -12,6 +13,7 @@ export interface IProduct {
   categoryId: mongoose.Schema.Types.ObjectId;
   name: string;
   price: number;
+  slug: string;
   discountedPrice?: number;
   description: string;
   attributes: Record<string, string>;
@@ -23,6 +25,10 @@ export interface IProduct {
 export interface IProductDocument extends IProduct, Document {}
 export interface IProductModel extends Model<IProductDocument> {
   seedInitialData(data: IProduct[]): Promise<void>;
+  paginate(
+    filter: Record<string, any>,
+    options: Record<string, any>,
+  ): Promise<Record<string, any>>;
 }
 
 // Schema for a single variant option
@@ -75,6 +81,15 @@ const productSchema = new mongoose.Schema<IProductDocument, IProductModel>(
       type: [String],
       default: [],
     },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      match: /^[a-z0-9-]+$/,
+      trim: true,
+      index: true,
+    },
   },
   {
     timestamps: true,
@@ -88,6 +103,8 @@ productSchema.statics.seedInitialData = async function (data: IProduct[]) {
 };
 
 productSchema.plugin(toJSON);
+productSchema.plugin(paginate);
+
 // Model export
 const Product = mongoose.model<IProductDocument, IProductModel>(
   'Product',
