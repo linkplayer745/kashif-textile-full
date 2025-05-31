@@ -1,12 +1,14 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import ProductCard from "../ui/product-card";
 import { PRODUCTS, VariantOption } from "@/data/products";
+import api from "@/utils/axiosInstance";
+import { Product } from "@/types";
 
 export interface ProductListItem {
-  id: number;
+  id: string;
   categoryId: number;
   frontImage?: string;
   description?: string;
@@ -19,24 +21,28 @@ export interface ProductListItem {
   discountedPrice?: number;
 }
 
-const products: ProductListItem[] = PRODUCTS.map((prod) => {
-  return {
-    id: prod.id,
-    categoryId: prod.categoryId,
-    frontImage: prod.images[0],
-    sizes: prod.variants.sizes,
-    fits: prod.variants.fits,
-    colors: prod.variants.colors,
-    description: prod.description,
-    backImage: prod.images[1],
-    title: prod.name,
-    price: prod.price,
-    ...(prod.discountedPrice != null && {
-      discountedPrice: prod.discountedPrice,
-    }),
-  };
-});
+
 function NewArrival() {
+  const [products, setProducts] = React.useState<Product[]>()
+  useEffect(() => {
+    async function fetchProducts() {
+      const res = await api.get("/products",{
+        data:{
+          limit: 10,
+          sort: "createdAt",
+          order: "desc"
+        }
+      });
+      console.log("datais ",res.data)
+      setProducts(res.data.results)
+    }
+ 
+    try {
+      fetchProducts()
+    } catch (error) {
+      console.log(error)
+    }
+  }, [])
   return (
     <div className="main-padding">
       <h2 className="main-heading">NEW ARRIVALS</h2>
@@ -66,19 +72,20 @@ function NewArrival() {
             },
           }}
         >
-          {products.map((item, index) => (
+          {products?.map((item, index) => (
             <SwiperSlide key={index} className="h-full w-full">
               <div className="h-[45vh] max-h-[500px] sm:h-[70vh] xl:max-h-full">
                 <ProductCard
                   discountedPrice={item.discountedPrice}
-                  frontImage={item.frontImage}
-                  backImage={item.backImage}
+                  frontImage={item.images[0]}
+                  backImage={item.images[1]}
                   description={item.description}
-                  title={item.title}
-                  sizes={item.sizes}
-                  fits={item.fits}
-                  colors={item.colors}
+                  title={item.name}
+                  sizes={item.variants.sizes}
+                  fits={item.variants.fits}
+                  colors={item.variants.colors}
                   id={item.id}
+                  slug={item.slug}
                   price={item.price}
                 />
               </div>

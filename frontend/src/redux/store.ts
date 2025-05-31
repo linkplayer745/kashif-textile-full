@@ -16,8 +16,10 @@ import cartReducer from "./slices/cartSlice";
 import modalReducer from "./slices/modalSlice";
 import wishlistReduer from "./slices/wishlistSlice";
 import { createPersistStorage } from "@/utils/storage";
+import userReducer from "./slices/userSlice";
 
 const rootReducer = combineReducers({
+  user:userReducer,
   cart: cartReducer,
   modal: modalReducer,
   wishlist: wishlistReduer,

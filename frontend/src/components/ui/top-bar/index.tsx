@@ -34,13 +34,13 @@ function TopBar() {
         </button>
         <div className="invisible absolute right-0 z-30 mt-2 w-44 origin-top-right translate-y-[10px] transform rounded-md bg-white py-1 opacity-0 shadow-md transition-all duration-300 ease-in-out group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
           <Link
-            href="#"
+            href="/login"
             className="block px-4 py-2 text-sm hover:bg-gray-100 lg:text-base"
           >
             Login
           </Link>
           <Link
-            href="#"
+            href="/register"
             className="block px-4 py-2 text-sm hover:bg-gray-100 lg:text-base"
           >
             Register

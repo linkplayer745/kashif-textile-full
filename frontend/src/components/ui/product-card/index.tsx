@@ -9,11 +9,12 @@ import React from "react";
 import { FaShoppingCart, FaHeart } from "react-icons/fa";
 
 export type ProductType = {
-  id: number;
+  id: string ;
   frontImage?: string | StaticImageData;
   backImage?: string | StaticImageData;
   description?: string;
   title: string;
+  slug: string;
   price: number;
   discountedPrice?: number;
   sizes?: VariantOption[];
@@ -30,11 +31,11 @@ function ProductCard({
   price,
   discountedPrice,
   sizes,
+  slug,
   fits,
   colors,
 }: ProductType) {
   const dispatch = useAppDispatch();
-  console.log("the enw coooler are ", colors);
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -44,6 +45,7 @@ function ProductCard({
         id,
         name: title,
         price,
+        slug,
         description,
         discountedPrice: discountedPrice,
         sizes,
@@ -64,7 +66,7 @@ function ProductCard({
   };
   return (
     <Link
-      href={`/product/${id}`}
+      href={`/product/${slug}`}
       className="group relative block h-full w-full overflow-hidden"
     >
       {/* Front and back images */}

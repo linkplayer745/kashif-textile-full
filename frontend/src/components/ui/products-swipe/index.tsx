@@ -68,6 +68,7 @@ function ProductSwipe({
                   id={item.id}
                   frontImage={item.frontImage}
                   backImage={item.backImage}
+                  slug="classic-polo"
                   title={item.title}
                   description={item.description}
                   colors={item.colors}

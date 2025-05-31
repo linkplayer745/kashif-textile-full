@@ -2,7 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { toast } from "sonner";
 
 type WishlistState = {
-  productId: number[];
+  productId: string[];
 };
 
 const initialState: WishlistState = {
@@ -13,7 +13,7 @@ const wishlistSlice = createSlice({
   name: "wishlist",
   initialState,
   reducers: {
-    addToWishlist(state, action: PayloadAction<number>) {
+    addToWishlist(state, action: PayloadAction<string>) {
       if (!state.productId.includes(action.payload)) {
         state.productId.push(action.payload);
       }
@@ -27,7 +27,7 @@ const wishlistSlice = createSlice({
         },
       });
     },
-    removeFromWishlist(state, action: PayloadAction<number>) {
+    removeFromWishlist(state, action: PayloadAction<string>) {
       state.productId = state.productId.filter((id) => id !== action.payload);
 
       toast.success("Item removed from wishlist");

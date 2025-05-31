@@ -14,11 +14,12 @@ import { FaCartShopping } from "react-icons/fa6";
 import { IoPersonOutline } from "react-icons/io5";
 import ProductSwipe from "@/components/ui/products-swipe";
 import { useParams } from "next/navigation";
-import { CATEGORIES, DetailedProduct, PRODUCTS } from "@/data/products";
+import { CATEGORIES, DetailedProduct } from "@/data/products";
 import { useAppDispatch } from "@/redux/hooks";
 import { addToCart } from "@/redux/slices/cartSlice";
 import { FiLoader } from "react-icons/fi";
 import { cn } from "@/utils/cn";
+import api from "@/utils/axiosInstance";
 
 export default function ProductPage() {
   const params = useParams();
@@ -33,25 +34,24 @@ export default function ProductPage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const productId = parseInt(params.id as string, 10);
+    const slug = params.slug as string;
 
-    const foundProduct = PRODUCTS.find((prod) => prod.id === productId);
-
-    if (foundProduct) {
-      setProduct(foundProduct);
-
-      const defaultSize = foundProduct.variants.sizes.find(
-        (size) => size.selected,
-      );
-      if (defaultSize) {
-        setSelectedSize(defaultSize.name);
+    const fetchProducts = async () => {
+      try {
+        const foundProduct = await api.get(`/products/get/${slug}`);
+        if (foundProduct) {
+          setProduct(foundProduct.data);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setIsLoaded(true);
       }
-    }
+    };
+    fetchProducts();
+  }, [params.slug]);
 
-    setIsLoaded(true);
-  }, [params.id]);
-
-  if (!isLoaded) {
+  if (!isLoaded && !product) {
     return (
       <div className="main-padding mx-auto mt-20 flex flex-col items-center justify-center gap-3 text-center">
         Loading product details
@@ -69,7 +69,7 @@ export default function ProductPage() {
   }
 
   const selectedColor =
-    product.variants.colors.find((color) => color.selected)?.name || "";
+    product?.variants?.colors.find((color) => color.selected)?.name || "";
   const selectedFit =
     product?.variants?.fits?.find((fit) => fit.selected)?.name || "";
 

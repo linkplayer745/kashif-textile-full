@@ -3,11 +3,11 @@ import { IMAGES } from "@/constants/images";
 export interface VariantOption {
   name: string;
   code?: string;
-  selected: boolean;
+  selected?: boolean;
 }
 
 export interface DetailedProduct {
-  id: number;
+  id: string;
   categoryId: number;
   name: string;
   price: number;
@@ -82,7 +82,7 @@ export const PRODUCTS: DetailedProduct[] = [
   // category: 9 accesories
   {
     name: "Sunglasses",
-    id: 2343,
+    id: "2343",
     attributes: {
       frameMaterial: "Metal",
       lensMaterial: "Acetate",
@@ -111,7 +111,7 @@ export const PRODUCTS: DetailedProduct[] = [
 
   // Category 1: Polo Shirts - Keep existing products
   {
-    id: 5827,
+    id: "5827",
     categoryId: 1,
     name: "Classic Polo Shirt",
     price: 2000,
@@ -150,7 +150,7 @@ export const PRODUCTS: DetailedProduct[] = [
     ],
   },
   {
-    id: 6352,
+    id: "6352",
     categoryId: 1,
     name: "Mandarin Collar Polo",
     price: 2100,
@@ -190,7 +190,7 @@ export const PRODUCTS: DetailedProduct[] = [
 
   // Category 2: Tees - Create appropriate T-shirt products
   {
-    id: 2154,
+    id: "2154",
     categoryId: 2,
     name: "Printed Graphic Tee",
     price: 1600,
@@ -228,7 +228,7 @@ export const PRODUCTS: DetailedProduct[] = [
     ],
   },
   {
-    id: 4720,
+    id: "4720",
     categoryId: 2,
     name: "Essential Crew Neck T-Shirt",
     price: 1000,
@@ -258,7 +258,7 @@ export const PRODUCTS: DetailedProduct[] = [
     images: ["/product-images/half-sleeve-t-shirt.webp"],
   },
   {
-    id: 6597,
+    id: "6597",
     categoryId: 2,
     name: "V-Neck Premium Tee",
     price: 1100,
@@ -291,7 +291,7 @@ export const PRODUCTS: DetailedProduct[] = [
 
   // Category 3: Trousers - Create appropriate trouser products
   {
-    id: 5039,
+    id: "5039",
     categoryId: 3,
     name: "Classic Chino Trousers",
     price: 2400,
@@ -328,7 +328,7 @@ export const PRODUCTS: DetailedProduct[] = [
     ],
   },
   {
-    id: 8765,
+    id: "8765",
     categoryId: 3,
     name: "Premium Dress Trousers",
     price: 3200,
@@ -365,7 +365,7 @@ export const PRODUCTS: DetailedProduct[] = [
     ],
   },
   {
-    id: 7432,
+    id: "7432",
     categoryId: 3,
     name: "Casual Stretch Trousers",
     price: 1800,
@@ -405,7 +405,7 @@ export const PRODUCTS: DetailedProduct[] = [
 
   // Category 4: Formal shirts
   {
-    id: 9104,
+    id: "9104",
     categoryId: 4,
     name: "Classic White Formal Shirt",
     price: 2200,
@@ -444,7 +444,7 @@ export const PRODUCTS: DetailedProduct[] = [
     ],
   },
   {
-    id: 2948,
+    id: "2948",
     categoryId: 4,
     name: "Business Formal Shirt",
     price: 2000,
@@ -482,7 +482,7 @@ export const PRODUCTS: DetailedProduct[] = [
     ],
   },
   {
-    id: 3845,
+    id: "3845",
     categoryId: 4,
     name: "Striped Formal Shirt",
     price: 2300,
@@ -521,7 +521,7 @@ export const PRODUCTS: DetailedProduct[] = [
 
   // Category 5: Fragrances - Create new products
   {
-    id: 7123,
+    id: "7123",
     categoryId: 5,
     name: "Aqua Breeze Eau de Parfum",
     price: 3500,
@@ -545,7 +545,7 @@ export const PRODUCTS: DetailedProduct[] = [
     images: ["/product-images/parfum.jpg", "/product-images/parfum.jpg"],
   },
   {
-    id: 8294,
+    id: "8294",
     categoryId: 5,
     name: "Midnight Oud Cologne",
     price: 4200,
@@ -569,7 +569,7 @@ export const PRODUCTS: DetailedProduct[] = [
     images: ["/product-images/parfum-1.webp", "/product-images/parfum-1.webp"],
   },
   {
-    id: 6517,
+    id: "6517",
     categoryId: 5,
     name: "Citrus Vetiver Essence",
     price: 3800,
@@ -596,7 +596,7 @@ export const PRODUCTS: DetailedProduct[] = [
 
   // Category 6: Gym Wear - Create new products
   {
-    id: 9371,
+    id: "9371",
     categoryId: 6,
     name: "Performance Training T-Shirt",
     price: 1800,
@@ -628,7 +628,7 @@ export const PRODUCTS: DetailedProduct[] = [
     images: ["/product-images/young-man-training-gym.avif"],
   },
   {
-    id: 5684,
+    id: "5684",
     categoryId: 6,
     name: "Active Training Shorts",
     price: 1600,
@@ -659,7 +659,7 @@ export const PRODUCTS: DetailedProduct[] = [
     images: ["/product-images/man-black-shorts-summer-apparel.avif"],
   },
   {
-    id: 4192,
+    id: "4192",
     categoryId: 6,
     name: "Compression Performance Leggings",
     price: 2200,
@@ -691,7 +691,7 @@ export const PRODUCTS: DetailedProduct[] = [
 
   // Category 7: Kids Collections - Create new products
   {
-    id: 2736,
+    id: "2736",
     categoryId: 7,
     name: "Kids  T-Shirt",
     price: 800,
@@ -721,7 +721,7 @@ export const PRODUCTS: DetailedProduct[] = [
     images: ["/product-images/kids-shirt.jpg"],
   },
   {
-    id: 3819,
+    id: "3819",
     categoryId: 7,
     name: "Kids Denim Jeans",
     price: 1200,
@@ -751,7 +751,7 @@ export const PRODUCTS: DetailedProduct[] = [
     images: ["/product-images/jeans-kids-blue-color-jeans.webp"],
   },
   {
-    id: 5942,
+    id: "5942",
     categoryId: 7,
     name: "Kids Polo Shirt",
     price: 900,
@@ -784,7 +784,7 @@ export const PRODUCTS: DetailedProduct[] = [
 
   // Category 8: Summer Tracksuits - Create new products
   {
-    id: 7493,
+    id: "7493",
     categoryId: 8,
     name: "Lightweight Summer Tracksuit",
     price: 3500,
@@ -817,7 +817,7 @@ export const PRODUCTS: DetailedProduct[] = [
     ],
   },
   {
-    id: 8651,
+    id: "8651",
     categoryId: 8,
     name: "Athletic Summer Set",
     price: 2800,

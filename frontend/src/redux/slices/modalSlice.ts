@@ -2,10 +2,11 @@
 import { VariantOption } from "@/data/products";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface Product {
-  id: number;
+export interface ProductInModal {
+  id: string;
   name: string;
   price: number;
+  slug: string;
   discountedPrice?: number;
   description?: string;
   image: string;
@@ -16,7 +17,7 @@ interface Product {
 
 interface ModalState {
   isOpen: boolean;
-  product: Product | null;
+  product: ProductInModal | null;
 }
 
 const initialState: ModalState = {
@@ -28,7 +29,7 @@ const modalSlice = createSlice({
   name: "modal",
   initialState,
   reducers: {
-    openModal(state, action: PayloadAction<Product>) {
+    openModal(state, action: PayloadAction<ProductInModal>) {
       state.isOpen = true;
       state.product = action.payload;
     },

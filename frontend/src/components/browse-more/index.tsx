@@ -1,41 +1,73 @@
 "use client";
 import { cn } from "@/utils/cn";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ProductCard from "../ui/product-card";
 import { motion, AnimatePresence } from "framer-motion";
-import { PRODUCTS } from "@/data/products";
 import { ProductListItem } from "../new-arrival";
+import api from "@/utils/axiosInstance";
+import { Category, Product } from "@/types";
+
+
 
 function BrowseMore() {
-  const products: ProductListItem[] = PRODUCTS.map((prod) => {
-    return {
-      id: prod.id,
-      categoryId: prod.categoryId,
-      frontImage: prod.images[0],
-      description: prod.description,
-      backImage: prod.images.length > 1 ? prod.images[1] : prod.images[0],
-      title: prod.name,
-      sizes: prod.variants.sizes,
-      fits: prod.variants.fits,
-      colors: prod.variants.colors,
-      price: prod.price,
-      ...(prod.discountedPrice != null && {
-        discountedPrice: prod.discountedPrice,
-      }),
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [category, setCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get("/category/all", { params: { limit: 3 } });
+
+        console.log("categories are .... ", res.data)
+        const fetchedCategories: Category[] = res.data.results// adjust based on actual API shape
+        setCategories(fetchedCategories);
+        if (fetchedCategories.length > 0) {
+          setCategory(fetchedCategories[0].id);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
     };
-  });
 
-  const categories = [
-    { id: 4, title: "Shirts" },
-    { id: 9, title: "Accessories" },
-    { id: 8, title: "Summer Collection" },
-  ];
+    fetchCategories();
+  }, []);
 
-  const [category, setCategory] = useState(categories[0].id);
+  useEffect(() => {
+    if (category === null) return;
 
-  const filteredProducts = products.filter(
-    (product) => product.categoryId === category,
-  );
+    const fetchProducts = async () => {
+      try {
+        const res = await api.get("/products", {
+          params: { categoryId: category, limit: 6 },
+        });
+
+        const fetchedProducts = res.data.results || res.data; // adjust based on actual API shape
+
+        // const mappedProducts: ProductListItem[] = fetchedProducts.map((prod: any) => ({
+        //   id: prod._id,
+        //   categoryId: prod.categoryId,
+        //   frontImage: prod.images?.[0],
+        //   backImage: prod.images?.[1] || prod.images?.[0],
+        //   description: prod.description,
+        //   title: prod.name,
+        //   sizes: prod.variants?.sizes || [],
+        //   fits: prod.variants?.fits || [],
+        //   colors: prod.variants?.colors || [],
+        //   price: prod.price,
+        //   ...(prod.discountedPrice != null && {
+        //     discountedPrice: prod.discountedPrice,
+        //   }),
+        // }));
+
+        setProducts(fetchedProducts);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchProducts();
+  }, [category]);
 
   return (
     <div className="main-padding">
@@ -49,39 +81,39 @@ function BrowseMore() {
               key={cat.id}
               onClick={() => setCategory(cat.id)}
               className={cn(
-                "cursor-pointer text-sm transition-colors duration-500 sm:text-base lg:text-xl",
-                cat.id === category ? "text-red" : "text-black",
+                "cursor-pointer text-sm capitalize transition-colors duration-500 sm:text-base lg:text-xl",
+                cat.id === category ? "text-red" : "text-black"
               )}
             >
-              {cat.title}
+              {cat.name}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Animated product grid */}
       <AnimatePresence mode="wait">
         <motion.div
           key={category}
           className="mt-5 grid grid-cols-2 gap-5 md:grid-cols-3 lg:mt-7 lg:gap-x-4 lg:gap-y-8"
         >
-          {filteredProducts.map((product, index) => (
+          {products.map((product) => (
             <motion.div
               key={product.id}
-              className="h-[35vh] sm:h-[90vh]"
+              className="h-[35vh] sm:h-[80vh]"
               initial={{ scale: 0.5, opacity: 0.5 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.4 }}
             >
               <ProductCard
                 id={product.id}
-                sizes={product.sizes}
-                frontImage={product.frontImage}
-                colors={product.colors}
-                fits={product.fits}
-                backImage={product.backImage}
+                sizes={product.variants.sizes}
+                frontImage={product.images[0]}
+                colors={product.variants.colors}
+                fits={product.variants.fits}
+                slug={product.slug}
+                backImage={product.images[1]}
                 description={product.description}
-                title={product.title}
+                title={product.name}
                 discountedPrice={product.discountedPrice}
                 price={product.price}
               />

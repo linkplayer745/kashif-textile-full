@@ -6,21 +6,12 @@ import { addToCart } from "@/redux/slices/cartSlice";
 import Link from "next/link";
 import { VariantOption } from "@/data/products";
 import { cn } from "@/utils/cn";
+import { ProductInModal } from "@/redux/slices/modalSlice";
 
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  product?: {
-    id: number;
-    name: string;
-    price: number;
-    discountedPrice?: number;
-    description?: string;
-    image: string;
-    sizes?: VariantOption[];
-    colors?: VariantOption[];
-    fits?: VariantOption[];
-  };
+  product?:ProductInModal;
 }
 
 const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
@@ -230,7 +221,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
               >
                 ADD TO CART
               </button>
-              <Link href={`/product/${product.id}`}>
+              <Link href={`/product/${product.slug}`}>
                 <button
                   onClick={onClose}
                   className="border border-gray-300 bg-white px-4 py-1 text-sm font-medium tracking-widest text-gray-700 transition duration-200 hover:bg-gray-100 lg:text-base"
