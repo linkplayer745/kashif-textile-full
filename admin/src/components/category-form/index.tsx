@@ -95,7 +95,9 @@ export default function CategoryForm({
           }),
         );
       } else {
-        await dispatch(addCategory({ categoryData: data, image }));
+        await dispatch(
+          addCategory({ categoryData: data, image: image as File }),
+        );
       }
 
       onSuccess?.();
