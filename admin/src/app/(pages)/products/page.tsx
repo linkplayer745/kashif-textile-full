@@ -22,7 +22,7 @@ import {
 } from "@/redux/slices/productSlice";
 import type { Product } from "@/lib/types";
 import Pagination from "@/components/pagination";
-import ProductFilters from "@/components/product-filters";
+import Filters, { FilterConfig } from "@/components/filters";
 import api from "@/utils/axiosInstance";
 import { toast } from "sonner";
 import { fetchCategories } from "@/redux/slices/categorySlice";
@@ -35,21 +35,40 @@ export default function ProductsPage() {
   const dispatch = useAppDispatch();
 
   // Filter states
-  const [currentSearch, setCurrentSearch] = useState("");
-  const [currentCategoryId, setCurrentCategoryId] = useState("");
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({
+    search: "",
+    categoryId: "",
+  });
 
   useEffect(() => {
     loadProducts();
     dispatch(fetchCategories());
   }, []);
 
+  // Define filter configuration
+  const filterConfig: FilterConfig[] = [
+    {
+      key: "search",
+      type: "search",
+      placeholder: "Search products...",
+    },
+    {
+      key: "categoryId",
+      type: "select",
+      placeholder: "Filter by category",
+      options: categories.map((cat) => ({
+        value: cat.id,
+        label: cat.name,
+      })),
+    },
+  ];
+
   const loadProducts = (params = {}) => {
     dispatch(
       fetchProducts({
         page: pagination.page,
         limit: pagination.limit,
-        search: currentSearch,
-        categoryId: currentCategoryId,
+        ...filterValues,
         ...params,
       }),
     ).unwrap();
@@ -86,20 +105,16 @@ export default function ProductsPage() {
     loadProducts({ page: 1, limit });
   };
 
-  const handleSearch = (search: string) => {
-    setCurrentSearch(search);
-    loadProducts({ page: 1, search, categoryId: currentCategoryId });
-  };
-
-  const handleCategoryFilter = (categoryId: string) => {
-    setCurrentCategoryId(categoryId);
-    loadProducts({ page: 1, search: currentSearch, categoryId });
+  const handleFilterChange = (key: string, value: string) => {
+    const newFilters = { ...filterValues, [key]: value };
+    setFilterValues(newFilters);
+    loadProducts({ page: 1, ...newFilters });
   };
 
   const handleClearFilters = () => {
-    setCurrentSearch("");
-    setCurrentCategoryId("");
-    loadProducts({ page: 1, search: "", categoryId: "" });
+    const clearedFilters = { search: "", categoryId: "" };
+    setFilterValues(clearedFilters);
+    loadProducts({ page: 1, ...clearedFilters });
   };
 
   if (isLoading && products.length === 0) {
@@ -122,12 +137,11 @@ export default function ProductsPage() {
         </Link>
       </div>
 
-      <ProductFilters
-        onSearch={handleSearch}
-        onCategoryFilter={handleCategoryFilter}
+      <Filters
+        filters={filterConfig}
+        values={filterValues}
+        onFilterChange={handleFilterChange}
         onClearFilters={handleClearFilters}
-        currentSearch={currentSearch}
-        currentCategoryId={currentCategoryId}
       />
 
       <Card>

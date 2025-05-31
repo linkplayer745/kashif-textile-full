@@ -4,7 +4,7 @@ import axios from "axios";
 
 // Create Axios instance
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BASE_URL,
+  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
 });
 
 // Request Interceptor

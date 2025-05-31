@@ -20,7 +20,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/admin/login`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/login`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

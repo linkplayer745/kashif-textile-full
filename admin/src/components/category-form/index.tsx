@@ -32,8 +32,7 @@ const categorySchema = z.object({
     .regex(
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
       "Invalid slug format special characters are not allowed",
-    )
-    .optional(),
+    ),
   description: z.string().optional(),
 });
 
@@ -137,7 +136,7 @@ export default function CategoryForm({
                 name="slug"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Slug</FormLabel>
+                    <FormLabel>Slug *</FormLabel>
                     <FormControl>
                       <Input placeholder="category-slug" {...field} />
                     </FormControl>

@@ -3,6 +3,7 @@ export interface Product {
   categoryId?: string;
   name: string;
   price: number;
+  slug: string;
   discountedPrice?: number;
   description?: string;
   attributes?: Record<string, string>;

@@ -44,6 +44,12 @@ const productSchema = z
       .optional(),
     description: z.string().optional(),
     categoryId: z.string().min(1, "Category is required"),
+    slug: z
+      .string()
+      .regex(
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+        "Invalid slug format special characters are not allowed",
+      ),
     attributes: z.record(z.string()).optional(),
     variants: z
       .record(
@@ -109,6 +115,7 @@ export default function ProductForm({
         typeof product?.discountedPrice === "number"
           ? product.discountedPrice
           : undefined,
+      slug: product?.slug || "",
       description: product?.description || "",
       categoryId: product?.categoryId || "",
       attributes: product?.attributes || {},
@@ -148,6 +155,33 @@ export default function ProductForm({
       }
     }
   }, [product]);
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === "name") {
+        const autoSlug = value.name
+          ?.toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9\s-]/g, "") // remove special characters
+          .replace(/\s+/g, "-"); // replace spaces with dashes
+
+        // Only auto-update if slug is empty or matches previous auto-generated value
+        const currentSlug = form.getValues("slug");
+        const prevAutoSlug = currentSlug
+          ?.toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9\s-]/g, "")
+          .replace(/\s+/g, "-");
+
+        if (!currentSlug || currentSlug === prevAutoSlug) {
+          if (autoSlug !== undefined) {
+            form.setValue("slug", autoSlug);
+          }
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   // Cleanup object URLs to prevent memory leaks
   useEffect(() => {
@@ -407,7 +441,19 @@ export default function ProductForm({
                     </FormItem>
                   )}
                 />
-
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Slug *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter product slug" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="price"

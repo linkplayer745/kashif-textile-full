@@ -28,8 +28,8 @@ export const categoryApi = {
   },
 
   async getCategories(): Promise<Category[]> {
-    const response = await api.get("/category/all");
-    return response.data.categories;
+    const response = await api.get(`/category/all`);
+    return response.data.results;
   },
 
   async deleteCategory(categoryId: string) {
