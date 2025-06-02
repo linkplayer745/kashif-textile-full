@@ -1,35 +1,70 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import ProductCard from "../product-card";
 
 import { ProductListItem } from "@/components/new-arrival";
 import { PRODUCTS } from "@/data/products";
-const products: ProductListItem[] = PRODUCTS.map((prod) => {
-  return {
-    id: prod.id,
-    categoryId: prod.categoryId,
-    frontImage: prod.images[0],
-    backImage: prod.images[1],
-    title: prod.name,
-    sizes: prod.variants.sizes,
-    fits: prod.variants.fits,
-    colors: prod.variants.colors,
-    description: prod.description,
-    price: prod.price,
-    ...(prod.discountedPrice != null && {
-      discountedPrice: prod.discountedPrice,
-    }),
-  };
-});
+import api from "@/utils/axiosInstance";
+import { Product } from "@/types";
+import { useAppSelector } from "@/redux/hooks";
+// const products: ProductListItem[] = PRODUCTS.map((prod) => {
+//   return {
+//     id: prod.id,
+//     categoryId: prod.categoryId,
+//     frontImage: prod.images[0],
+//     backImage: prod.images[1],
+//     title: prod.name,
+//     sizes: prod.variants.sizes,
+//     fits: prod.variants.fits,
+//     colors: prod.variants.colors,
+//     description: prod.description,
+//     price: prod.price,
+//     ...(prod.discountedPrice != null && {
+//       discountedPrice: prod.discountedPrice,
+//     }),
+//   };
+// });
 function ProductSwipe({
   // products,
+  recentlyViewed,
+  categoryId,
   heading,
 }: {
   // products?: ProductType[];
+  categoryId?: number;
+  recentlyViewed?: boolean;
   heading: string;
 }) {
+  const [products, setProducts] = React.useState<Product[]>([]);
+  const recentlyViewedProducts = useAppSelector(
+    (state) => state.user.recentlyViewedProducts,
+  );
+
+  console.log("my recenterly viewd products ........ ", recentlyViewedProducts);
+  useEffect(() => {
+    async function fetchProducts() {
+      const res = await api.get("/products", {
+        data: {
+          limit: 10,
+          sort: "createdAt",
+          order: "desc",
+        },
+        params: {
+          ...(categoryId && { categoryId }),
+          ...(recentlyViewed && { ids: recentlyViewedProducts?.join(",") }),
+        },
+      });
+      setProducts(res.data.results);
+    }
+
+    try {
+      fetchProducts();
+    } catch (error) {
+      console.log(error);
+    }
+  }, []);
   return (
     <div>
       <h2 className="border-light-gray mb-5 border-b py-5 text-2xl font-medium">
@@ -66,14 +101,14 @@ function ProductSwipe({
               <div className="h-[50vh] max-h-[500px] sm:h-[70vh] xl:max-h-full">
                 <ProductCard
                   id={item.id}
-                  frontImage={item.frontImage}
-                  backImage={item.backImage}
-                  slug="classic-polo"
-                  title={item.title}
+                  frontImage={item.images[0]}
+                  backImage={item.images[1]}
+                  slug={item.slug}
+                  title={item.name}
                   description={item.description}
-                  colors={item.colors}
-                  sizes={item.sizes}
-                  fits={item.fits}
+                  colors={item.variants?.colors}
+                  sizes={item.variants?.sizes}
+                  fits={item.variants?.fits}
                   price={item.price}
                 />
               </div>

@@ -6,36 +6,14 @@ import { ImCross } from "react-icons/im";
 import { IoSearch } from "react-icons/io5";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { PRODUCTS } from "@/data/products";
+import api from "@/utils/axiosInstance";
+import { Product } from "@/types";
 
 type Suggestion = {
   id: number;
   name: string;
-  image: string | StaticImageData;
+  image: string[] | StaticImageData;
 };
-
-const mockSuggestions: Suggestion[] = [
-  {
-    id: 1,
-    name: "Plain Sky Classic Fit Shirt",
-    image: IMAGES.POLO_SHIRT,
-  },
-  {
-    id: 2,
-    name: "Plain Grey Tailored Smart Fit Shirt",
-    image: IMAGES.POLO_SHIRT,
-  },
-  {
-    id: 3,
-    name: "Stripe White/Red Tailored Shirt",
-    image: IMAGES.POLO_SHIRT,
-  },
-  {
-    id: 4,
-    name: "Printed White/Red Shirt",
-    image: IMAGES.POLO_SHIRT,
-  },
-];
 
 const SearchBar = ({
   isOpen,
@@ -45,17 +23,30 @@ const SearchBar = ({
   onClose: () => void;
 }) => {
   const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
 
   const close = () => {
     onClose();
     setQuery("");
+    setSuggestions([]);
   };
 
-  const filteredSuggestions = query
-    ? PRODUCTS.filter((item) =>
-        item.name.toLowerCase().includes(query.toLowerCase()),
-      )
-    : [];
+  const fetchSuggestions = async (query: string) => {
+    const response = await api.get(`/products?searchTerm=${query}&limit=10`);
+    setSuggestions(response.data.results);
+  };
+
+  const debouncedFetchSuggestions = debounce(fetchSuggestions, 500);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setQuery(query);
+    if (query.length > 2) {
+      debouncedFetchSuggestions(query);
+    } else {
+      setSuggestions([]);
+    }
+  };
 
   return (
     <div
@@ -77,7 +68,7 @@ const SearchBar = ({
             type="text"
             placeholder="Search a Product"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={handleChange}
             className="w-full rounded py-2 pr-4 text-lg placeholder-black outline-none"
           />
           <span className="ml-2">
@@ -87,7 +78,7 @@ const SearchBar = ({
 
         {/* Slide-down animation */}
         <AnimatePresence>
-          {filteredSuggestions.length > 0 && (
+          {suggestions.length > 0 && (
             <motion.ul
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -95,11 +86,11 @@ const SearchBar = ({
               transition={{ duration: 0.25 }}
               className="absolute top-full z-10 mt-2 max-h-96 w-full overflow-y-auto bg-white px-6 py-2 shadow-lg"
             >
-              {filteredSuggestions.map((item) => (
+              {suggestions.map((item) => (
                 <Link
                   onClick={close}
                   key={item.id}
-                  href={`/product/${item.id}`}
+                  href={`/product/${item.slug}`}
                 >
                   <motion.li
                     initial={{ opacity: 0, y: -10 }}
@@ -128,3 +119,16 @@ const SearchBar = ({
 };
 
 export default SearchBar;
+
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number,
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      func(...args);
+    }, wait);
+  };
+}

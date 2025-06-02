@@ -20,6 +20,7 @@ import { addToCart } from "@/redux/slices/cartSlice";
 import { FiLoader } from "react-icons/fi";
 import { cn } from "@/utils/cn";
 import api from "@/utils/axiosInstance";
+import { addRecentlyViewedProduct } from "@/redux/slices/userSlice";
 
 export default function ProductPage() {
   const params = useParams();
@@ -41,9 +42,11 @@ export default function ProductPage() {
         const foundProduct = await api.get(`/products/get/${slug}`);
         if (foundProduct) {
           setProduct(foundProduct.data);
+          console.log("found .... ", foundProduct.data.id);
+          dispatch(addRecentlyViewedProduct(foundProduct.data.id));
         }
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.log("Error fetching products:", error);
       } finally {
         setIsLoaded(true);
       }
@@ -462,13 +465,11 @@ export default function ProductPage() {
 
       <ProductSwipe
         heading="Similar Products"
+        categoryId={product.categoryId}
         // products={[{backImage}]}
       />
 
-      <ProductSwipe
-        heading="Recent Viewed Products"
-        // products={[{backImage}]}
-      />
+      <ProductSwipe heading="Recent Viewed Products" recentlyViewed />
     </div>
   );
 }

@@ -1,41 +1,14 @@
 import { cn } from "@/utils/cn";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   IoIosArrowForward,
   IoIosArrowUp,
   IoIosArrowDown,
 } from "react-icons/io";
-// Define the sidebar item structure
-const sidebarData = [
-  {
-    title: "SUMMER TRACKSUITS",
-    path: "/category/8",
-    submenu: [
-      { title: "Lightweight Tracksuits", path: "/lightweight-tracksuits" },
-      { title: "Breathable Fabrics", path: "/breathable-fabrics" },
-      { title: "Athletic Fit", path: "/athletic-fit" },
-      { title: "Casual Wear", path: "/casual-wear" },
-    ],
-  },
-  {
-    title: "Polo Shirts",
-    path: "/category/1",
-    submenu: [
-      { title: "Printed Shirts", path: "/printed-shirts" },
-      { title: "Textured Shirts", path: "/textured-shirts" },
-      { title: "Designer Shirts", path: "/designer-shirts" },
-      { title: "Plain Shirts", path: "/plain-shirts" },
-    ],
-  },
-
-  {
-    title: "KIDS COLLECTION",
-    path: "/category/7",
-    submenu: [],
-  },
-  { title: "TROUSERES & SHORTS", path: "/category/3", submenu: [] },
-];
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { fetchCategories } from "@/redux/slices/categorySlice";
 
 // Additional links shown at the bottom of sidebar
 const additionalLinks = [
@@ -45,16 +18,36 @@ const additionalLinks = [
   { title: "Wishlist", path: "/wishlist" },
 ];
 
+// Transform category data to match sidebar structure
+const transformCategoryToSidebarItem = (category: any) => ({
+  title: category.name,
+  path: `/category/${category.slug}`,
+  submenu: category.subcategories || [], // If your API returns subcategories
+});
+
 export default function MultilevelSidebar({
   isOpen,
   onClose,
 }: Readonly<{ isOpen: boolean; onClose: () => void }>) {
+  const dispatch = useAppDispatch();
+  const { categories, isLoading } = useAppSelector((state) => state.category);
+
   const [isMobile, setIsMobile] = useState(false);
-  const [activeSubmenu, setActiveSubmenu] = useState<number | null>(null);
-  const [submenuPosition, setSubmenuPosition] = useState<number>(0);
+  // const [activeSubmenu, setActiveSubmenu] = useState<number | null>(null);
+  // const [submenuPosition, setSubmenuPosition] = useState<number>(0);
   const [expandedMenus, setExpandedMenus] = useState<Record<number, boolean>>(
     {},
   );
+
+  // Transform categories to sidebar data format
+  const sidebarData = categories.map(transformCategoryToSidebarItem);
+
+  useEffect(() => {
+    // Fetch categories if not already loaded
+    if (categories.length === 0 && !isLoading) {
+      dispatch(fetchCategories(6)); // Fetch all categories for sidebar
+    }
+  }, [dispatch, categories.length, isLoading]);
 
   useEffect(() => {
     const checkIfMobile = () => setIsMobile(window.innerWidth < 768);
@@ -63,21 +56,21 @@ export default function MultilevelSidebar({
     return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
 
-  const handleMouseEnter = (
-    index: number,
-    e: React.MouseEvent<HTMLLIElement>,
-  ) => {
-    if (!isMobile) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      // Calculate top relative to parent container
-      setSubmenuPosition(rect.top);
-      setActiveSubmenu(index);
-    }
-  };
+  // const handleMouseEnter = (
+  //   index: number,
+  //   e: React.MouseEvent<HTMLLIElement>,
+  // ) => {
+  //   if (!isMobile) {
+  //     const rect = e.currentTarget.getBoundingClientRect();
+  //     // Calculate top relative to parent container
+  //     setSubmenuPosition(rect.top);
+  //     setActiveSubmenu(index);
+  //   }
+  // };
 
-  const handleWrapperLeave = () => {
-    if (!isMobile) setActiveSubmenu(null);
-  };
+  // const handleWrapperLeave = () => {
+  //   if (!isMobile) setActiveSubmenu(null);
+  // };
 
   const toggleSubmenu = (index: number) => {
     if (isMobile)
@@ -85,9 +78,42 @@ export default function MultilevelSidebar({
   };
 
   const handleBack = () => {
-    setActiveSubmenu(null);
+    // setActiveSubmenu(null);
     onClose();
   };
+
+  // Show loading state if categories are being fetched
+  if (isLoading && categories.length === 0) {
+    return (
+      <>
+        {isOpen && (
+          <div
+            className="fixed inset-0 z-[998] bg-black opacity-50"
+            onClick={handleBack}
+          />
+        )}
+        <div
+          className={cn(
+            "fixed top-0 left-0 z-[999] flex h-full min-h-screen transition-transform duration-500",
+            isOpen ? "translate-x-0" : "-translate-x-full",
+          )}
+        >
+          <div className="w-64 bg-white text-gray-900 shadow-lg">
+            <button
+              onClick={handleBack}
+              className="flex items-center p-4 hover:text-gray-600"
+            >
+              <IoIosArrowForward className="mr-2 h-5 w-5 rotate-180 transform" />
+              <span className="font-medium">Back</span>
+            </button>
+            <div className="flex items-center justify-center p-8">
+              <div className="text-sm text-gray-500">Loading categories...</div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -105,7 +131,10 @@ export default function MultilevelSidebar({
         )}
       >
         {/* wrapper for hover region */}
-        <div className="relative flex h-full" onMouseLeave={handleWrapperLeave}>
+        <div
+          className="relative flex h-full"
+          // onMouseLeave={handleWrapperLeave}
+        >
           {/* Sidebar (scrollable) */}
           <div className="w-64 overflow-y-auto bg-white text-gray-900 shadow-lg">
             <button
@@ -119,8 +148,8 @@ export default function MultilevelSidebar({
               <ul>
                 {sidebarData.map((item, idx) => (
                   <li
-                    key={idx}
-                    onMouseEnter={(e) => handleMouseEnter(idx, e)}
+                    key={`${item.title}-${idx}`}
+                    // onMouseEnter={(e) => handleMouseEnter(idx, e)}
                     className="relative"
                   >
                     <div
@@ -130,7 +159,7 @@ export default function MultilevelSidebar({
                       <Link
                         onClick={handleBack}
                         href={item.path}
-                        className="block text-sm font-medium"
+                        className="block text-sm font-medium capitalize"
                       >
                         {item.title}
                       </Link>
@@ -145,23 +174,23 @@ export default function MultilevelSidebar({
                           <IoIosArrowForward className="h-4 w-4" />
                         ))}
                     </div>
-                    {isMobile && expandedMenus[idx] && (
+                    {/* {isMobile && expandedMenus[idx] && (
                       <div className="bg-gray-50 pl-8">
                         <ul className="py-2">
-                          {item.submenu.map((sub, subIdx) => (
+                          {item.submenu.map((sub: any, subIdx: number) => (
                             <li key={subIdx}>
                               <Link
-                                // href={sub.path}
-                                href={"#"}
+                                href={sub.path || "#"}
                                 className="block px-4 py-2 text-sm"
+                                onClick={handleBack}
                               >
-                                {sub.title}
+                                {sub.title || sub.name}
                               </Link>
                             </li>
                           ))}
                         </ul>
                       </div>
-                    )}
+                    )} */}
                   </li>
                 ))}
               </ul>
@@ -185,28 +214,31 @@ export default function MultilevelSidebar({
           </div>
 
           {/* Desktop submenu outside scroll */}
-          {!isMobile &&
+          {/* {!isMobile &&
             activeSubmenu !== null &&
-            sidebarData[activeSubmenu].submenu.length > 0 && (
+            sidebarData[activeSubmenu]?.submenu.length > 0 && (
               <div
                 className="absolute left-64 z-[1000] w-64 overflow-y-auto bg-white shadow-lg transition-all duration-300"
                 style={{ top: submenuPosition }}
               >
                 <ul className="py-2">
-                  {sidebarData[activeSubmenu].submenu.map((sub, i) => (
-                    <li key={i} className="px-4 py-2">
-                      <Link
-                        href={"#"}
-                        className="group relative block w-fit text-sm"
-                      >
-                        {sub.title}
-                        <span className="border-red absolute -bottom-1 left-0 w-0 transform border-b-2 duration-300 ease-in group-hover:w-full" />
-                      </Link>
-                    </li>
-                  ))}
+                  {sidebarData[activeSubmenu].submenu.map(
+                    (sub: any, i: number) => (
+                      <li key={i} className="px-4 py-2">
+                        <Link
+                          href={sub.path || "#"}
+                          className="group relative block w-fit text-sm"
+                          onClick={handleBack}
+                        >
+                          {sub.title || sub.name}
+                          <span className="border-red absolute -bottom-1 left-0 w-0 transform border-b-2 duration-300 ease-in group-hover:w-full" />
+                        </Link>
+                      </li>
+                    ),
+                  )}
                 </ul>
               </div>
-            )}
+            )} */}
         </div>
       </div>
     </>

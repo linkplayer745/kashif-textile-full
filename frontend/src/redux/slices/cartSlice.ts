@@ -45,7 +45,7 @@ const cartSlice = createSlice({
         state.items.push(newItem);
       }
 
-      toast.success("Item added to cart");
+      toast.success("Item added to cart", { position: "bottom-right" });
     },
 
     removeFromCart: (

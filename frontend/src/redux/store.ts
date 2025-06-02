@@ -16,19 +16,21 @@ import cartReducer from "./slices/cartSlice";
 import modalReducer from "./slices/modalSlice";
 import wishlistReduer from "./slices/wishlistSlice";
 import { createPersistStorage } from "@/utils/storage";
+import categoryReducer from "./slices/categorySlice";
 import userReducer from "./slices/userSlice";
 
 const rootReducer = combineReducers({
-  user:userReducer,
+  user: userReducer,
   cart: cartReducer,
   modal: modalReducer,
   wishlist: wishlistReduer,
+  category: categoryReducer,
 });
 const storage = createPersistStorage();
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["cart", "wishlist"],
+  whitelist: ["cart", "wishlist", "user"],
   synchronizeTabs: true,
 };
 

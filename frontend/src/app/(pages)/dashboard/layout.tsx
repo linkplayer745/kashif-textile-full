@@ -1,17 +1,20 @@
-import { DashboardSidebar } from "@/components/dashboard-sidebar"
-import type React from "react"
+import Auth from "@/components/auth/Auth";
+import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import type React from "react";
 
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-gray-50 mt-20">
-      <DashboardSidebar />
-      <div className="lg:pl-80">
-        <main className="p-4 lg:p-8">{children}</main>
+    <Auth>
+      <div className="mt-20 flex bg-gray-50">
+        <DashboardSidebar />
+        <div className="w-full">
+          <main className="p-4 lg:p-8">{children}</main>
+        </div>
       </div>
-    </div>
-  )
+    </Auth>
+  );
 }

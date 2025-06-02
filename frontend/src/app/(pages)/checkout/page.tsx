@@ -2,6 +2,7 @@
 import { IMAGES } from "@/constants/images";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { clearCart } from "@/redux/slices/cartSlice";
+import { fetchUserProfile } from "@/redux/slices/userSlice";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
@@ -11,6 +12,42 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import api from "@/utils/axiosInstance";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+// Country and state mappings
+const COUNTRIES = [
+  { value: "Pakistan", label: "Pakistan" },
+  { value: "Bangladesh", label: "Bangladesh" },
+];
+
+const STATES = {
+  Pakistan: [
+    { value: "Punjab", label: "Punjab" },
+    { value: "Sindh", label: "Sindh" },
+    { value: "KPK", label: "KPK" },
+    { value: "Balochistan", label: "Balochistan" },
+  ],
+  Bangladesh: [
+    { value: "Dhaka", label: "Dhaka" },
+    { value: "Chittagong", label: "Chittagong" },
+    { value: "Sylhet", label: "Sylhet" },
+  ],
+};
+
+const CITIES = {
+  Pakistan: [
+    { value: "Karachi", label: "Karachi" },
+    { value: "Lahore", label: "Lahore" },
+    { value: "Islamabad", label: "Islamabad" },
+    { value: "Faisalabad", label: "Faisalabad" },
+    { value: "Rawalpindi", label: "Rawalpindi" },
+  ],
+  Bangladesh: [
+    { value: "Dhaka", label: "Dhaka" },
+    { value: "Chittagong", label: "Chittagong" },
+    { value: "Sylhet", label: "Sylhet" },
+  ],
+};
 
 // Zod validation schema
 const checkoutSchema = z.object({
@@ -69,11 +106,38 @@ interface OrderApiPayload {
   }>;
 }
 
+// Helper function to find the closest match for auto-fill
+const findClosestMatch = (
+  userValue: string,
+  options: Array<{ value: string; label: string }>,
+) => {
+  if (!userValue) return "";
+
+  // Exact match
+  const exactMatch = options.find(
+    (option) => option.value.toLowerCase() === userValue.toLowerCase(),
+  );
+  if (exactMatch) return exactMatch.value;
+
+  // Partial match
+  const partialMatch = options.find(
+    (option) =>
+      option.value.toLowerCase().includes(userValue.toLowerCase()) ||
+      userValue.toLowerCase().includes(option.value.toLowerCase()),
+  );
+  if (partialMatch) return partialMatch.value;
+
+  return "";
+};
+
 const CheckoutPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector((state) => state.cart.items);
+  const { currentUser } = useAppSelector((state) => state.user);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<string>("Pakistan");
+  const router = useRouter();
 
   const {
     register,
@@ -90,6 +154,8 @@ const CheckoutPage: React.FC = () => {
     },
   });
 
+  const watchedCountry = watch("country");
+
   const [orderSummary, setOrderSummary] = useState<OrderSummary>({
     subtotal: 0,
     discount: 0,
@@ -97,7 +163,87 @@ const CheckoutPage: React.FC = () => {
     grandTotal: 0,
   });
 
-  // Calculate order summary values from cart
+  // Fetch user profile if not already loaded
+  useEffect(() => {
+    if (localStorage.getItem("token") && !currentUser) {
+      dispatch(fetchUserProfile());
+    }
+  }, [dispatch, currentUser]);
+
+  // Auto-fill form when user data is available
+  useEffect(() => {
+    if (currentUser) {
+      const autoFillData: Partial<CheckoutFormData> = {};
+
+      // Basic info
+      if (currentUser.name) {
+        autoFillData.fullName = currentUser.name;
+      }
+      if (currentUser.email) {
+        autoFillData.email = currentUser.email;
+      }
+
+      // Address details with smart matching
+      if (currentUser.details) {
+        const { details } = currentUser;
+
+        if (details.phone) {
+          autoFillData.phone = details.phone;
+        }
+
+        if (details.address) {
+          autoFillData.address1 = details.address;
+        }
+
+        if (details.postalCode) {
+          autoFillData.postalCode = details.postalCode;
+        }
+
+        // Smart matching for dropdowns
+        if (details.country) {
+          const matchedCountry = findClosestMatch(details.country, COUNTRIES);
+          if (matchedCountry) {
+            autoFillData.country = matchedCountry;
+            setSelectedCountry(matchedCountry);
+          }
+        }
+
+        if (details.state && autoFillData.country) {
+          const stateOptions =
+            STATES[autoFillData.country as keyof typeof STATES] || [];
+          const matchedState = findClosestMatch(details.state, stateOptions);
+          if (matchedState) {
+            autoFillData.state = matchedState;
+          }
+        }
+
+        if (details.city && autoFillData.country) {
+          const cityOptions =
+            CITIES[autoFillData.country as keyof typeof CITIES] || [];
+          const matchedCity = findClosestMatch(details.city, cityOptions);
+          if (matchedCity) {
+            autoFillData.city = matchedCity;
+          }
+        }
+      }
+
+      // Set form values
+      Object.entries(autoFillData).forEach(([key, value]) => {
+        if (value) {
+          setValue(key as keyof CheckoutFormData, value);
+        }
+      });
+    }
+  }, [currentUser, setValue]);
+
+  // Update selected country when form country changes
+  useEffect(() => {
+    setSelectedCountry(watchedCountry);
+    // Reset state and city when country changes
+    setValue("state", "");
+    setValue("city", "");
+  }, [watchedCountry, setValue]);
+
   useEffect(() => {
     const subtotal = cartItems.reduce(
       (total, item) => total + item.price * item.quantity,
@@ -119,24 +265,6 @@ const CheckoutPage: React.FC = () => {
       grandTotal: itemsTotal,
     });
   }, [cartItems]);
-
-  // API call to create order
-  const createOrder = async (orderData: OrderApiPayload): Promise<any> => {
-    const response = await api.post("/order", orderData);
-    // fetch("/api/orders", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify(orderData),
-    // });
-
-    if (!response.status || response.status >= 400) {
-      toast.error("Failed to create order");
-    }
-
-    return response.data;
-  };
 
   // Form submission handler
   const onSubmit = async (data: CheckoutFormData) => {
@@ -161,6 +289,16 @@ const CheckoutPage: React.FC = () => {
             size: item.selectedVariants.size,
           }),
           ...(item.selectedVariants?.fit && { fit: item.selectedVariants.fit }),
+
+          // ...(item.selectedVariants
+          //   ? Object.keys(item.selectedVariants).reduce(
+          //       (variantObj, key) => ({
+          //         ...variantObj,
+          //         [key]: item.selectedVariants[key]
+          //       }),
+          //       {},
+          //     )
+          //   : {}),
         },
       }));
 
@@ -181,18 +319,22 @@ const CheckoutPage: React.FC = () => {
       };
 
       // Create the order
-      const orderResponse = await createOrder(orderPayload);
+      const response = await api.post("/order", orderPayload);
 
-      console.log("Order created successfully:", orderResponse);
-
-      // Clear the cart after successful order
-      dispatch(clearCart());
-
-      // Here you would typically redirect to a success page
-      // For example: router.push(`/order-confirmation/${orderResponse.orderId}`);
-      // alert("Order placed successfully! Order ID: " + (orderResponse.orderId || orderResponse.id));
+      if (!response.status || response.status >= 400) {
+        toast.error("Failed to create order");
+      } else {
+        dispatch(clearCart());
+        if (currentUser) {
+          router.push("/dashboard/orders");
+        } else {
+          router.push("/");
+        }
+        toast("Order placed successfully!", {
+          position: "bottom-right",
+        });
+      }
     } catch (error) {
-      console.error("Error creating order:", error);
       setSubmitError(
         error instanceof Error
           ? error.message
@@ -203,6 +345,10 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
+  // Get available states for selected country
+  const availableStates = STATES[selectedCountry as keyof typeof STATES] || [];
+  const availableCities = CITIES[selectedCountry as keyof typeof CITIES] || [];
+
   return (
     <div className="mt-20 min-h-screen px-3 pt-4 lg:px-7 lg:pt-8">
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -210,17 +356,31 @@ const CheckoutPage: React.FC = () => {
           {/* Left Section - Shipping Details */}
           <div className="">
             {/* Returning Customer */}
-            <div className="bg-light-platinum mb-6 px-6 py-2">
-              <div className="flex items-center gap-4 text-sm lg:text-base">
-                <IoIosCheckmarkCircle className="text-[#7bb818]" />
-                <span className="text-chinese-black font-semibold">
-                  Returning Customer?
-                </span>
-                <a href="#" className="text-red font-semibold">
-                  Click here to login
-                </a>
+            {!currentUser && (
+              <div className="bg-light-platinum mb-6 px-6 py-2">
+                <div className="flex items-center gap-4 text-sm lg:text-base">
+                  <IoIosCheckmarkCircle className="text-[#7bb818]" />
+                  <span className="text-chinese-black font-semibold">
+                    Returning Customer?
+                  </span>
+                  <a href="#" className="text-red font-semibold">
+                    Click here to login
+                  </a>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Auto-fill Notice */}
+            {currentUser && (
+              <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3">
+                <div className="flex items-center">
+                  <IoIosCheckmarkCircle className="mr-2 text-blue-600" />
+                  <span className="text-sm text-blue-800">
+                    Form auto-filled with your profile information
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Shipping Details */}
             <div className="rounded-lg bg-white py-3">
@@ -229,13 +389,14 @@ const CheckoutPage: React.FC = () => {
               </h2>
 
               {/* Register/Guest */}
-              <div className="mb-6 flex items-center gap-4">
+              {/* <div className="mb-6 flex items-center gap-4">
                 <label className="flex items-center">
                   <input
                     type="radio"
                     name="accountType"
                     value="register"
                     className="mr-2"
+                    defaultChecked={!!currentUser}
                   />
                   <span className="text-chinese-black">Register</span>
                 </label>
@@ -245,11 +406,11 @@ const CheckoutPage: React.FC = () => {
                     name="accountType"
                     value="guest"
                     className="mr-2"
-                    defaultChecked
+                    defaultChecked={!currentUser}
                   />
                   <span className="text-chinese-black">Guest</span>
                 </label>
-              </div>
+              </div> */}
 
               {/* Form Fields */}
               <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -308,9 +469,16 @@ const CheckoutPage: React.FC = () => {
                   <select
                     {...register("country")}
                     className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    onChange={(e) => {
+                      setSelectedCountry(e.target.value);
+                      setValue("country", e.target.value);
+                    }}
                   >
-                    <option value="Pakistan">Pakistan</option>
-                    <option value="Bangladesh">Bangladesh</option>
+                    {COUNTRIES.map((country) => (
+                      <option key={country.value} value={country.value}>
+                        {country.label}
+                      </option>
+                    ))}
                   </select>
                   {errors.country && (
                     <p className="mt-1 text-sm text-red-500">
@@ -330,10 +498,11 @@ const CheckoutPage: React.FC = () => {
                     className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
                     <option value="">Select State</option>
-                    <option value="Punjab">Punjab</option>
-                    <option value="Sindh">Sindh</option>
-                    <option value="KPK">KPK</option>
-                    <option value="Balochistan">Balochistan</option>
+                    {availableStates.map((state) => (
+                      <option key={state.value} value={state.value}>
+                        {state.label}
+                      </option>
+                    ))}
                   </select>
                   {errors.state && (
                     <p className="mt-1 text-sm text-red-500">
@@ -350,9 +519,11 @@ const CheckoutPage: React.FC = () => {
                     className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   >
                     <option value="">Select City</option>
-                    <option value="Karachi">Karachi</option>
-                    <option value="Lahore">Lahore</option>
-                    <option value="Islamabad">Islamabad</option>
+                    {availableCities.map((city) => (
+                      <option key={city.value} value={city.value}>
+                        {city.label}
+                      </option>
+                    ))}
                   </select>
                   {errors.city && (
                     <p className="mt-1 text-sm text-red-500">
@@ -445,7 +616,7 @@ const CheckoutPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Section - Order Summary */}
+          {/* Right Section - Order Summary (keeping existing code) */}
           <div className="">
             <div className="rounded-lg bg-white">
               {/* Order Summary Header */}
@@ -499,15 +670,15 @@ const CheckoutPage: React.FC = () => {
                           />
                           <div>
                             <div>{item.name}</div>
-                            {item.selectedVariants?.color && (
-                              <div>{item.selectedVariants?.color}</div>
-                            )}
-                            {item.selectedVariants?.size && (
-                              <div>{item.selectedVariants?.size}</div>
-                            )}
-                            {item.selectedVariants?.fit && (
-                              <div>{item.selectedVariants?.fit}</div>
-                            )}
+                            {item.selectedVariants &&
+                              Object.entries(item.selectedVariants).map(
+                                ([key, value]) => (
+                                  <div key={key}>
+                                    {key.charAt(0).toUpperCase() + key.slice(1)}
+                                    : {value}
+                                  </div>
+                                ),
+                              )}
                           </div>
                         </div>
                         <div className="col-span-2">
