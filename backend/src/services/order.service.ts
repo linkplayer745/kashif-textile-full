@@ -1,6 +1,6 @@
 // src/services/order.service.ts
 import { Types } from 'mongoose';
-import { Order, IOrderDocument } from '../models/order.model';
+import { Order, IOrderDocument, OrderStatus } from '../models/order.model';
 import Product, { IProductDocument } from '../models/product.model';
 import ApiError from '../utils/apiError';
 import httpStatus from 'http-status';
@@ -100,21 +100,22 @@ const getOrders = async (
   return orders;
 };
 
-// const updateOrderStatus = async (
-//   orderId: string,
-//   status: OrderStatus,
-// ): Promise<IOrderDocument> => {
-//   const order = await Order.findById(orderId);
-//   if (!order) {
-//     throw new ApiError(httpStatus.NOT_FOUND, 'Order not found');
-//   }
-//   order.status = status;
-//   await order.save();
-//   return order;
-// };
+const updateOrderStatus = async (
+  orderId: string,
+  status: OrderStatus,
+): Promise<IOrderDocument> => {
+  const order = await Order.findById(orderId);
+  if (!order) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Order not found');
+  }
+  order.status = status;
+  await order.save();
+  return order;
+};
 
 export default {
   getOrders,
   createOrder,
+  updateOrderStatus,
   getOrdersByUserId,
 };

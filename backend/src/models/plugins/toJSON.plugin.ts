@@ -51,7 +51,7 @@ const toJSON = <T extends Document = Document, M extends Model<T> = Model<T>>(
 
       // Rename _id to id
       ret.id = ret._id.toString();
-      delete ret.createdAt;
+      // delete ret.createdAt;
       delete ret.updatedAt;
       delete ret._id;
       delete ret.__v;

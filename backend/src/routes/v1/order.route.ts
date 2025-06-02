@@ -19,4 +19,10 @@ router
 
 router.get('/user-orders', auth, orderController.getOrdersByUserId);
 
+router.patch(
+  '/:orderId',
+  adminAuth,
+  validate(orderValidation.updateOrderStatus),
+  orderController.updateOrderStatus,
+);
 export default router;

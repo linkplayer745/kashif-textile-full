@@ -31,7 +31,15 @@ export const createOrder = {
   }),
 };
 
+const updateOrderStatus = {
+  body: Joi.object({
+    status: Joi.string()
+      .valid('pending', 'paid', 'shipped', 'completed', 'cancelled')
+      .required(),
+  }),
+};
 const orderValidation = {
+  updateOrderStatus,
   createOrder,
 };
 

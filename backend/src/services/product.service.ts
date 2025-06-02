@@ -133,10 +133,12 @@ const getProducts = async (req: Request) => {
     ? { name: { $regex: new RegExp(searchTerm, 'i') } }
     : {};
   const categoryId = req.query.categoryId as string;
+  const ids = (req.query.ids as string)?.split(',') || [];
 
   const categoryFilter = categoryId ? { categoryId } : {};
+  const idsFilter = ids.length > 0 ? { _id: { $in: ids } } : {};
 
-  const filter = { ...nameFilter, ...categoryFilter };
+  const filter = { ...nameFilter, ...categoryFilter, ...idsFilter };
 
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
 
