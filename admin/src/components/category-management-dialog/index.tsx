@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +26,6 @@ import { deleteCategory, fetchCategories } from "@/redux/slices/categorySlice";
 
 export default function CategoryManagementDialog() {
   const categories = useAppSelector((state) => state.category.categories);
-
   const isLoading = useAppSelector((state) => state.category.isLoading);
   const dispatch = useAppDispatch();
   const [isDialogOpen, setIsDialogOpen] = useState(false);

@@ -7,12 +7,11 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  // 🚀 Redirect if already logged in
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      router.replace("/dashboard"); // or wherever you want
+      router.replace("/dashboard");
     }
   }, [router]);
 
@@ -30,12 +29,22 @@ export default function LoginPage() {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.message || "Login failed");
+      if (!res.ok) {
+        const error = new Error(data.message || "Login failed");
+        setError(error.message);
+        throw error;
+      }
 
       localStorage.setItem("token", data.token);
       router.push("/dashboard");
     } catch (error: any) {
-      console.error("Login failed:", error.message);
+      setError(error.message);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && password) {
+      handleSubmit(e);
     }
   };
 
@@ -74,20 +83,21 @@ export default function LoginPage() {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={handleKeyPress}
               className="border-secondary text-base-color focus:border-muted focus:ring-muted mt-1 w-full rounded-md border bg-white p-2 shadow-sm focus:ring-1 focus:outline-none"
               required
             />
           </div>
           <button
             type="submit"
-            className="bg-base-color w-full rounded-md px-4 py-2 text-white transition hover:opacity-90"
+            className="bg-base-color w-full rounded-md px-4 py-2 text-white transition hover:opacity-90 focus:shadow-2xl focus-visible:ring-4 focus-visible:ring-gray-600 focus-visible:outline-none"
           >
             Sign In
           </button>
         </form>
-        {errorMessage && (
+        {error && (
           <div className="mt-2 rounded-md bg-red-100 p-2 text-sm text-red-600">
-            {errorMessage}
+            {error}
           </div>
         )}
       </div>

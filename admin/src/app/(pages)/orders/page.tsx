@@ -41,11 +41,7 @@ import Pagination from "@/components/pagination";
 import Filters, { FilterConfig } from "@/components/filters"; // Adjust path as needed
 import { useAppDispatch, useAppSelector } from "@/hooks/useStore";
 import { toast } from "sonner";
-import {
-  fetchOrders,
-  setSearchId,
-  updateOrderStatus,
-} from "@/redux/slices/orderSlice";
+import { fetchOrders, updateOrderStatus } from "@/redux/slices/orderSlice";
 import {
   Package,
   Truck,
@@ -62,9 +58,9 @@ import {
 // Define order status options
 const ORDER_STATUS_OPTIONS = [
   { value: "pending", label: "Pending" },
-  { value: "processing", label: "Processing" },
+  { value: "paid", label: "Paid" },
   { value: "shipped", label: "Shipped" },
-  { value: "delivered", label: "Delivered" },
+  { value: "completed", label: "Completed" },
   { value: "cancelled", label: "Cancelled" },
 ];
 
@@ -152,17 +148,16 @@ export default function OrdersPage() {
       await dispatch(
         updateOrderStatus({ orderId, status: newStatus }),
       ).unwrap();
-      toast.success(`Order status updated to ${newStatus}`);
 
       // Refresh orders
-      dispatch(
-        fetchOrders({
-          page,
-          limit,
-          orderId: filterValues.orderId || undefined,
-          status: filterValues.status || undefined,
-        }),
-      );
+      // dispatch(
+      //   fetchOrders({
+      //     page,
+      //     limit,
+      //     orderId: filterValues.orderId || undefined,
+      //     status: filterValues.status || undefined,
+      //   }),
+      // );
     } catch (error) {
       toast.error("Failed to update order status");
     }

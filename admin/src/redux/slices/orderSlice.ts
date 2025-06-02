@@ -1,6 +1,7 @@
 // src/redux/slices/ordersSlice.ts
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/utils/axiosInstance";
+import { toast } from "sonner";
 
 export interface OrderItem {
   product: string;
@@ -53,7 +54,9 @@ export const fetchOrders = createAsyncThunk<
   { page?: number; limit?: number; orderId?: string; status?: string }
 >("orders/fetchOrders", async (params, { rejectWithValue }) => {
   try {
-    const res = await api.get("/order", { params });
+    const res = await api.get("/order", {
+      params: { ...params, sortBy: "createdAt", order: "desc" },
+    });
     return res.data as PaginatedOrders;
   } catch (err: any) {
     return rejectWithValue(err.message || "Failed to fetch orders");
@@ -63,7 +66,7 @@ export const fetchOrders = createAsyncThunk<
 export const updateOrderStatus = createAsyncThunk(
   "order/updateStatus",
   async ({ orderId, status }: { orderId: string; status: string }) => {
-    const response = await api.patch(`/orders/${orderId}/status`, { status });
+    const response = await api.patch(`/order/${orderId}`, { status });
     return response.data;
   },
 );
@@ -96,6 +99,16 @@ const ordersSlice = createSlice({
       .addCase(fetchOrders.rejected, (s, action) => {
         s.status = "failed";
         s.error = action.payload as string;
+      })
+      .addCase(updateOrderStatus.fulfilled, (s, action) => {
+        const updatedOrder = action.payload;
+        const index = s.results.findIndex(
+          (order) => order.id === updatedOrder.id,
+        );
+        if (index !== -1) {
+          s.results[index] = updatedOrder;
+        }
+        toast.success(`Order status updated to ${updatedOrder.status}`);
       });
   },
 });
