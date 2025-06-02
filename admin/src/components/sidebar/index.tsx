@@ -77,7 +77,7 @@ export default function AdminSidebar() {
         <nav>
           <ul className="space-y-2">
             {[
-              { name: "Dashboard", icon: BarChart, id: "dashboard" },
+              // { name: "Dashboard", icon: BarChart, id: "dashboard" },
               { name: "Orders", icon: NotebookIcon, id: "orders" },
               { name: "Products", icon: ShoppingBag, id: "products" },
               { name: "Categories", icon: AlignJustify, id: "categories" },

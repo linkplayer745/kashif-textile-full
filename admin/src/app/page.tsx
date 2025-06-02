@@ -11,7 +11,7 @@ export default function Home() {
     if (!token) {
       router.replace("/login");
     } else {
-      router.replace("/dashboard");
+      router.replace("/orders");
     }
   }, [token, router]);
 
