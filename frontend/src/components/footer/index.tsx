@@ -87,7 +87,7 @@ export default async function Footer() {
         <div>
           <h3 className="mb-3 text-lg font-medium">Main Menu</h3>
           <ul className="space-y-3 text-sm">
-            {categories.map((item: Category, index: number) => (
+            {categories?.map((item: Category, index: number) => (
               <li className="group relative w-fit cursor-pointer" key={index}>
                 <Link className="capitalize" href={`category/${item.slug}`}>
                   {item.name}

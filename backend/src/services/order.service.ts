@@ -25,7 +25,6 @@ export interface CreateOrderDto {
     quantity: number;
     selectedVariant?: Record<string, string>;
   }>;
-  // shippingCost: number;
 }
 
 const createOrder = async (
@@ -33,22 +32,17 @@ const createOrder = async (
 ): Promise<IOrderDocument | undefined> => {
   const { items, userId, ...shipping } = dto;
   const shippingCost = 200;
-  // 1) Fetch all product docs in one go
-  const productIds = Array.from(
-    new Set(items.map((i) => new Types.ObjectId(i.product))),
-  );
-  const products = await Product.find({
-    _id: { $in: productIds },
-  });
+  const productIds = items?.map((i) => i.product);
+  const uniqueProductIds = [...new Set(productIds)];
 
-  // 2) Ensure all requested products exist
-  if (products.length !== productIds.length) {
+  const products = await Product.find({ _id: { $in: uniqueProductIds } });
+
+  if (products.length !== uniqueProductIds.length) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       'One or more products not found',
     );
   }
-
   const orderItems = items.map((i) => {
     const prodDoc = products.find((p) =>
       (p._id as Types.ObjectId).equals(i.product),
@@ -68,7 +62,6 @@ const createOrder = async (
   );
   const total = subTotal + shippingCost;
 
-  // 5) Assemble payload
   const payload: any = {
     items: orderItems,
     shipping: shipping, // nested shipping fields
