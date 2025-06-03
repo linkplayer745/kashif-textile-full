@@ -55,7 +55,7 @@ export const fetchOrders = createAsyncThunk<
 >("orders/fetchOrders", async (params, { rejectWithValue }) => {
   try {
     const res = await api.get("/order", {
-      params: { ...params, sortBy: "createdAt", order: "desc" },
+      params: { ...params, sortBy: "createdAt:desc" },
     });
     return res.data as PaginatedOrders;
   } catch (err: any) {
