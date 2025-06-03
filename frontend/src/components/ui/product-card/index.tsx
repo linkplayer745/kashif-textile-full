@@ -1,62 +1,21 @@
 import { IMAGES } from "@/constants/images";
-import { VariantOption } from "@/data/products";
 import { useAppDispatch } from "@/redux/hooks";
 import { openModal } from "@/redux/slices/modalSlice";
 import { addToWishlist } from "@/redux/slices/wishlistSlice";
-import Image, { StaticImageData } from "next/image";
+import { Product } from "@/types";
+import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import { FaShoppingCart, FaHeart } from "react-icons/fa";
 
-export type ProductType = {
-  id: string ;
-  frontImage?: string | StaticImageData;
-  backImage?: string | StaticImageData;
-  description?: string;
-  title: string;
-  slug: string;
-  price: number;
-  discountedPrice?: number;
-  sizes?: VariantOption[];
-  fits?: VariantOption[];
-  colors?: VariantOption[];
-};
-
-function ProductCard({
-  id,
-  frontImage,
-  backImage,
-  title,
-  description,
-  price,
-  discountedPrice,
-  sizes,
-  slug,
-  fits,
-  colors,
-}: ProductType) {
+function ProductCard({ product }: { product: Product }) {
+  const { id, images, name, price, discountedPrice, slug } = product;
   const dispatch = useAppDispatch();
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    dispatch(
-      openModal({
-        id,
-        name: title,
-        price,
-        slug,
-        description,
-        discountedPrice: discountedPrice,
-        sizes,
-        fits,
-        colors,
-        image:
-          typeof frontImage === "string"
-            ? frontImage
-            : frontImage?.src || IMAGES.NO_IMAGE.src,
-      }),
-    );
+    dispatch(openModal(product));
   };
   const handleAddToWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -74,15 +33,15 @@ function ProductCard({
         <Image
           height={300}
           width={250}
-          src={frontImage || backImage || IMAGES.NO_IMAGE}
-          alt={title}
+          src={images?.[0] || IMAGES.NO_IMAGE}
+          alt={name}
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-in-out"
         />
         <Image
           height={300}
           width={250}
-          src={backImage || frontImage || ""}
-          alt={`${title} alternate`}
+          src={images?.[1] || images?.[0] || IMAGES.NO_IMAGE}
+          alt={`${name} alternate`}
           className="absolute inset-0 h-full w-full -translate-x-full transform object-cover opacity-0 transition-all delay-100 duration-700 ease-in-out group-hover:translate-x-0 group-hover:opacity-100"
         />
 
@@ -106,7 +65,7 @@ function ProductCard({
 
       {/* Caption */}
       <div className="w-full py-4">
-        <h3 className="text-md truncate font-light">{title}</h3>
+        <h3 className="text-md truncate font-light">{name}</h3>
         <p className="text-lg leading-tight font-semibold">
           {typeof discountedPrice === "number"
             ? `Rs.${discountedPrice.toLocaleString()}`

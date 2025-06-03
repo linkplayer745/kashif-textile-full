@@ -3,46 +3,29 @@ import React, { useEffect } from "react";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import ProductCard from "../ui/product-card";
-import { PRODUCTS, VariantOption } from "@/data/products";
 import api from "@/utils/axiosInstance";
-import { Product } from "@/types";
-
-export interface ProductListItem {
-  id: string;
-  categoryId: number;
-  frontImage?: string;
-  description?: string;
-  sizes?: VariantOption[];
-  fits?: VariantOption[];
-  colors?: VariantOption[];
-  backImage?: string;
-  title: string;
-  price: number;
-  discountedPrice?: number;
-}
-
+import { Product, VariantOption } from "@/types";
 
 function NewArrival() {
-  const [products, setProducts] = React.useState<Product[]>()
+  const [products, setProducts] = React.useState<Product[]>();
   useEffect(() => {
     async function fetchProducts() {
-      const res = await api.get("/products",{
-        data:{
+      const res = await api.get("/products", {
+        data: {
           limit: 10,
           sort: "createdAt",
-          order: "desc"
-        }
+          order: "desc",
+        },
       });
-      console.log("datais ",res.data)
-      setProducts(res.data.results)
+      setProducts(res.data.results);
     }
- 
+
     try {
-      fetchProducts()
+      fetchProducts();
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }, [])
+  }, []);
   return (
     <div className="main-padding">
       <h2 className="main-heading">NEW ARRIVALS</h2>
@@ -72,22 +55,10 @@ function NewArrival() {
             },
           }}
         >
-          {products?.map((item, index) => (
+          {products?.map((prod, index) => (
             <SwiperSlide key={index} className="h-full w-full">
               <div className="h-[45vh] max-h-[500px] sm:h-[70vh] xl:max-h-full">
-                <ProductCard
-                  discountedPrice={item.discountedPrice}
-                  frontImage={item.images[0]}
-                  backImage={item.images[1]}
-                  description={item.description}
-                  title={item.name}
-                  sizes={item.variants.sizes}
-                  fits={item.variants.fits}
-                  colors={item.variants.colors}
-                  id={item.id}
-                  slug={item.slug}
-                  price={item.price}
-                />
+                <ProductCard product={prod} />
               </div>
             </SwiperSlide>
           ))}

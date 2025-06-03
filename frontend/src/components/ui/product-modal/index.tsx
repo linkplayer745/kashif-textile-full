@@ -1,45 +1,52 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useDispatch } from "react-redux";
 import { IoMdClose } from "react-icons/io";
 import { addToCart } from "@/redux/slices/cartSlice";
 import Link from "next/link";
-import { VariantOption } from "@/data/products";
 import { cn } from "@/utils/cn";
-import { ProductInModal } from "@/redux/slices/modalSlice";
+import { Product, VariantOption } from "@/types";
+import { useAppDispatch } from "@/redux/hooks";
+import { renderVariant } from "@/utils/renderVariant";
 
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  product?:ProductInModal;
+  product?: Product;
 }
 
 const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
-  const dispatch = useDispatch();
-  const [selectedSize, setSelectedSize] = useState<VariantOption | null>(null);
-  const [selectedColor, setSelectedColor] = useState<VariantOption | null>(
-    null,
-  );
-  const [selectedFit, setSelectedFit] = useState<VariantOption | null>(null);
+  const dispatch = useAppDispatch();
+
+  const [selectedVariants, setSelectedVariants] = useState<
+    Record<string, string>
+  >({});
   const [quantity, setQuantity] = useState<number>(1);
 
   useEffect(() => {
-    if (isOpen) {
-      setSelectedSize(product?.sizes?.[0] || null);
-      setSelectedColor(product?.colors?.[0] || null);
-      setSelectedFit(product?.fits?.[0] || null);
+    if (isOpen && product) {
+      const initialSelectedVariants: Record<string, string> = {};
+      Object.keys(product.variants).forEach((variantType) => {
+        if (product.variants[variantType]?.length > 0) {
+          initialSelectedVariants[variantType] =
+            product.variants[variantType][0].name;
+        }
+      });
+
+      setSelectedVariants(initialSelectedVariants);
       setQuantity(1);
     }
   }, [isOpen, product]);
 
   if (!isOpen || !product) return null;
 
-  const handleAddToCart = () => {
-    if (!selectedSize && product.sizes?.length) {
-      alert("Please select a size");
-      return;
-    }
+  const handleVariantSelect = (variantType: string, optionName: string) => {
+    setSelectedVariants((prev) => ({
+      ...prev,
+      [variantType]: optionName,
+    }));
+  };
 
+  const handleAddToCart = () => {
     dispatch(
       addToCart({
         id: product.id,
@@ -47,18 +54,119 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         price: product.price,
         discountedPrice: product.discountedPrice,
         quantity,
-        selectedVariants: {
-          size: selectedSize?.name,
-          color: selectedColor?.name,
-          fit: selectedFit?.name,
-        },
-        image: product.image,
+        selectedVariants,
+        image: product.images?.[0],
       }),
     );
 
     onClose();
   };
-  console.log("the colors are ", product?.colors);
+
+  // Generic variant renderer - exactly the same as product page
+  const renderVariant1 = (variantType: string, options: VariantOption[]) => {
+    const selectedValue = selectedVariants[variantType] || "";
+    const variantTypeDisplay =
+      variantType.charAt(0).toUpperCase() + variantType.slice(1);
+
+    // Special rendering for color variants
+    if (
+      variantType.toLowerCase() === "colors" ||
+      variantType.toLowerCase() === "color"
+    ) {
+      return (
+        <div className="mb-4" key={variantType}>
+          <p className="font-medium">
+            Select {variantTypeDisplay}:{" "}
+            <span className="font-normal">{selectedValue}</span>
+          </p>
+          <div className="my-2 flex items-start justify-center space-x-2">
+            {options.map((option, index) => (
+              <button
+                className="rounded-t outline"
+                aria-label={`Select ${option.name} ${variantType}`}
+                onClick={() => handleVariantSelect(variantType, option.name)}
+                key={index}
+              >
+                <div
+                  className="h-9 w-14 rounded-t"
+                  style={{
+                    backgroundColor: option.code || option.name.toLowerCase(),
+                  }}
+                />
+                <div
+                  className={cn(
+                    "w-14 border-t py-2 text-[12px] font-medium",
+                    selectedValue === option.name
+                      ? "bg-gold text-white"
+                      : "bg-white text-black",
+                  )}
+                >
+                  {option.name}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Special rendering for size variants (circular buttons)
+    if (
+      variantType.toLowerCase() === "sizes" ||
+      variantType.toLowerCase() === "size"
+    ) {
+      return (
+        <div className="mb-6" key={variantType}>
+          <div className="mb-2">
+            <p className="text-center font-medium">
+              Select {variantTypeDisplay}: {selectedValue}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {options.map((option, index) => (
+              <button
+                key={index}
+                className={`flex h-12 min-w-12 items-center justify-center rounded-full border px-2 ${
+                  selectedValue === option.name
+                    ? "border-gray-700 bg-gray-100"
+                    : "border-gray-300"
+                }`}
+                onClick={() => handleVariantSelect(variantType, option.name)}
+              >
+                {option.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Default rendering for other variants (rectangular buttons)
+    return (
+      <div className="my-4" key={variantType}>
+        <p className="mx-auto w-fit pb-3 font-medium">
+          Select {variantTypeDisplay}:{" "}
+          <span className="font-normal">{selectedValue}</span>
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {options.map((option, index) => (
+            <button
+              key={index}
+              className={`border px-4 py-2 text-[12px] font-semibold ${
+                selectedValue === option.name
+                  ? "bg-platinum border-gray-700"
+                  : "border-gray-300"
+              } text-center`}
+              onClick={() => handleVariantSelect(variantType, option.name)}
+            >
+              {option.name.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const discount =
     product.discountedPrice && product.price > product.discountedPrice
       ? Math.round((1 - product.discountedPrice / product.price) * 100)
@@ -77,7 +185,7 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="flex items-center justify-center">
             <Image
-              src={product.image}
+              src={product.images?.[0]}
               alt={product.name}
               width={300}
               height={400}
@@ -115,80 +223,14 @@ const ProductModal = ({ isOpen, onClose, product }: ProductModalProps) => {
               </div>
             )}
 
-            {/* Size */}
-            {product.sizes && product?.sizes?.length > 0 && (
-              <div className="mb-6">
-                <h3 className="mb-2 text-base font-semibold">Select Size:</h3>
-                <div className="flex flex-wrap gap-2">
-                  {product?.sizes?.map((size) => (
-                    <button
-                      key={size.name}
-                      onClick={() => setSelectedSize(size)}
-                      className={`flex h-10 min-w-12 items-center justify-center rounded border px-1 ${
-                        selectedSize?.name === size.name
-                          ? "border-red-500 bg-red-50 text-red-500"
-                          : "border-gray-300 text-gray-700 hover:border-gray-400"
-                      }`}
-                    >
-                      {size.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Color */}
-            {product?.colors && product?.colors?.length > 0 && (
-              <div className="mb-4">
-                <p className="font-medium">Select Color:</p>
-                <div className="my-2 flex flex-wrap items-center gap-2">
-                  {product.colors.map((color, index) => (
-                    <button
-                      className={`rounded-t outline`}
-                      aria-label={`Select ${color.name} color`}
-                      onClick={() => setSelectedColor(color)}
-                      key={index}
-                    >
-                      <div
-                        className="h-9 min-w-14 rounded-t"
-                        style={{ backgroundColor: color.code }}
-                      ></div>
-                      <div
-                        className={cn(
-                          "min-w-14 border-t px-1 py-2 text-[12px] font-medium",
-                          selectedColor?.name === color.name
-                            ? "bg-gold text-white"
-                            : "bg-white text-black",
-                        )}
-                      >
-                        {color.name}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Fit */}
-            {product?.fits && product.fits?.length > 0 && (
-              <div className="mb-4">
-                <p className="font-medium">Select Fit:</p>
-                <div className="flex flex-wrap gap-2">
-                  {product.fits.map((fit) => (
-                    <button
-                      key={fit.name}
-                      onClick={() => setSelectedFit(fit)}
-                      className={`border px-4 py-2 text-sm font-medium ${
-                        selectedFit?.name === fit.name
-                          ? "border-gray-700 bg-gray-100"
-                          : "border-gray-300"
-                      }`}
-                    >
-                      {fit.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {/* Render all variants using the same logic as product page */}
+            {Object.entries(product.variants).map(([variantType, options]) =>
+              renderVariant({
+                variantType,
+                options,
+                selectedVariants,
+                handleVariantSelect,
+              }),
             )}
 
             {/* Quantity */}

@@ -1,7 +1,11 @@
 "use client";
 
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { removeFromCart } from "@/redux/slices/cartSlice";
+import {
+  removeFromCart,
+  formatVariantsForDisplay,
+} from "@/redux/slices/cartSlice";
+import renderVariantInfo from "@/utils/renderVariantInfo";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState, useRef } from "react";
@@ -59,7 +63,7 @@ function CartComponent() {
               {cartItems.map((item, index) => (
                 <Link
                   href={`/product/${item.id}`}
-                  key={index}
+                  key={`${item.id}-${index}`} // Better key for items with variants
                   className="grid grid-cols-10 gap-3 text-sm"
                 >
                   <Image
@@ -70,37 +74,40 @@ function CartComponent() {
                     height={90}
                   />
                   <div className="col-span-4">
-                    <p>{item.name}</p>
-                    {item.quantity > 1 && <p>Qty: {item.quantity}</p>}
+                    <p className="font-medium">{item.name}</p>
+                    {item.quantity > 1 && (
+                      <p className="text-xs text-gray-600">
+                        Qty: {item.quantity}
+                      </p>
+                    )}
 
-                    {item?.selectedVariants?.color && (
-                      <p>Color: {item?.selectedVariants?.color}</p>
-                    )}
-                    {item?.selectedVariants?.fit && (
-                      <p>Fit: {item?.selectedVariants?.fit}</p>
-                    )}
-                    {item?.selectedVariants?.size && (
-                      <p>Size: {item?.selectedVariants?.size}</p>
+                    {/* Generic variant display - Option 1: Individual lines */}
+                    {renderVariantInfo(item.selectedVariants)}
+                  </div>
+                  <div className="col-span-2">
+                    <p className="font-semibold text-nowrap">
+                      PKR{" "}
+                      {(item?.discountedPrice ?? item.price) * item.quantity}
+                    </p>
+                    {item.quantity > 1 && (
+                      <p className="text-xs text-nowrap text-gray-500">
+                        {item.quantity} × PKR{" "}
+                        {item?.discountedPrice ?? item.price}
+                      </p>
                     )}
                   </div>
-                  <p className="col-span-2 font-semibold text-nowrap">
-                    PKR {item?.discountedPrice ?? item.price}
-                  </p>
                   <RxCross2
                     strokeWidth={1}
-                    className="col-span-2 size-4 cursor-pointer justify-self-center"
+                    className="col-span-2 mx-2 size-4 cursor-pointer justify-self-center transition-colors hover:text-red-500"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
 
+                      // Generic variant handling - no hardcoded properties
                       dispatch(
                         removeFromCart({
                           id: item.id,
-                          selectedVariants: {
-                            color: item?.selectedVariants?.color,
-                            fit: item?.selectedVariants?.fit,
-                            size: item?.selectedVariants?.size,
-                          },
+                          selectedVariants: item.selectedVariants, // Pass the entire variants object
                         }),
                       );
                     }}
@@ -128,7 +135,7 @@ function CartComponent() {
                 href="/cart"
                 onClick={() => setIsOpen(false)}
               >
-                <button className="flex w-full cursor-pointer items-center justify-center bg-black py-2 text-[12px] text-white">
+                <button className="flex w-full cursor-pointer items-center justify-center bg-black py-2 text-[12px] text-white transition-colors hover:bg-gray-800">
                   VIEW CART
                 </button>
               </Link>
@@ -138,7 +145,7 @@ function CartComponent() {
                 href="/checkout"
                 onClick={() => setIsOpen(false)}
               >
-                <button className="bg-red flex w-full cursor-pointer items-center justify-center py-2 text-center text-[12px] text-white">
+                <button className="bg-red flex w-full cursor-pointer items-center justify-center py-2 text-center text-[12px] text-white transition-colors hover:bg-red-600">
                   CHECKOUT
                 </button>
               </Link>

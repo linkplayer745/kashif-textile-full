@@ -1,23 +1,23 @@
 // redux/slices/modalSlice.ts
-import { VariantOption } from "@/data/products";
+import { Product } from "@/types";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-export interface ProductInModal {
-  id: string;
-  name: string;
-  price: number;
-  slug: string;
-  discountedPrice?: number;
-  description?: string;
-  image: string;
-  sizes?: VariantOption[];
-  colors?: VariantOption[];
-  fits?: VariantOption[];
-}
+// export interface ProductInModal {
+//   id: string;
+//   name: string;
+//   price: number;
+//   slug: string;
+//   discountedPrice?: number;
+//   description?: string;
+//   image: string;
+//   sizes?: VariantOption[];
+//   colors?: VariantOption[];
+//   fits?: VariantOption[];
+// }
 
 interface ModalState {
   isOpen: boolean;
-  product: ProductInModal | null;
+  product: Product | null;
 }
 
 const initialState: ModalState = {
@@ -29,7 +29,7 @@ const modalSlice = createSlice({
   name: "modal",
   initialState,
   reducers: {
-    openModal(state, action: PayloadAction<ProductInModal>) {
+    openModal(state, action: PayloadAction<Product>) {
       state.isOpen = true;
       state.product = action.payload;
     },

@@ -1,7 +1,6 @@
 import { cn } from "@/utils/cn";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import {
   IoIosArrowForward,
   IoIosArrowUp,
@@ -10,7 +9,6 @@ import {
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { fetchCategories } from "@/redux/slices/categorySlice";
 
-// Additional links shown at the bottom of sidebar
 const additionalLinks = [
   { title: "Made To Measure", path: "#" },
   { title: "Order Tracking", path: "#" },
@@ -18,11 +16,10 @@ const additionalLinks = [
   { title: "Wishlist", path: "/wishlist" },
 ];
 
-// Transform category data to match sidebar structure
 const transformCategoryToSidebarItem = (category: any) => ({
   title: category.name,
   path: `/category/${category.slug}`,
-  submenu: category.subcategories || [], // If your API returns subcategories
+  submenu: category.subcategories || [],
 });
 
 export default function MultilevelSidebar({
@@ -33,19 +30,16 @@ export default function MultilevelSidebar({
   const { categories, isLoading } = useAppSelector((state) => state.category);
 
   const [isMobile, setIsMobile] = useState(false);
-  // const [activeSubmenu, setActiveSubmenu] = useState<number | null>(null);
-  // const [submenuPosition, setSubmenuPosition] = useState<number>(0);
+
   const [expandedMenus, setExpandedMenus] = useState<Record<number, boolean>>(
     {},
   );
 
-  // Transform categories to sidebar data format
   const sidebarData = categories.map(transformCategoryToSidebarItem);
 
   useEffect(() => {
-    // Fetch categories if not already loaded
     if (categories.length === 0 && !isLoading) {
-      dispatch(fetchCategories(6)); // Fetch all categories for sidebar
+      dispatch(fetchCategories(6));
     }
   }, [dispatch, categories.length, isLoading]);
 
@@ -56,6 +50,7 @@ export default function MultilevelSidebar({
     return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
 
+  // this code is for submenu within the sidebar
   // const handleMouseEnter = (
   //   index: number,
   //   e: React.MouseEvent<HTMLLIElement>,
@@ -82,7 +77,6 @@ export default function MultilevelSidebar({
     onClose();
   };
 
-  // Show loading state if categories are being fetched
   if (isLoading && categories.length === 0) {
     return (
       <>

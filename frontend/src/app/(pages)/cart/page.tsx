@@ -8,15 +8,17 @@ import {
   increaseQuantity,
   removeFromCart,
 } from "@/redux/slices/cartSlice";
+import renderVariantInfo from "@/utils/renderVariantInfo";
 
 const CartPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector((state) => state.cart.items);
-  console.log("the cart items in cart are ", cartItems);
+
   const subtotal = cartItems.reduce(
     (sum, item) => sum + (item?.discountedPrice ?? item.price) * item.quantity,
     0,
   );
+
   if (cartItems.length === 0) {
     return (
       <div className="mt-20 px-4 py-4">
@@ -34,6 +36,7 @@ const CartPage: React.FC = () => {
       </div>
     );
   }
+
   return (
     <div className="mt-20 px-4 py-4">
       <div className="bg-light-platinum mb-6 px-3.5 py-2">
@@ -76,7 +79,7 @@ const CartPage: React.FC = () => {
           <tbody>
             {cartItems?.map((item, index) => (
               <tr
-                key={index}
+                key={`${item.id}-${index}`} // Better key for items with variants
                 className="border-platinum-2 items-center border-b text-center"
               >
                 <td className="px-2 py-6 sm:px-4">
@@ -91,45 +94,36 @@ const CartPage: React.FC = () => {
                 <td className="px-2 py-6 text-left sm:px-4">
                   <div className="flex flex-col">
                     <div className="font-medium">{item.name}</div>
-                    {item.selectedVariants.size && (
-                      <div className="mt-1">
-                        Size: {item.selectedVariants.size}
-                      </div>
-                    )}
-                    {item.selectedVariants.color && (
-                      <div className="mt-1">
-                        Color: {item.selectedVariants.color}
-                      </div>
-                    )}
 
-                    {item.selectedVariants.fit && (
-                      <div className="mt-1">
-                        Fit: {item.selectedVariants.fit}
-                      </div>
-                    )}
+                    {renderVariantInfo(item.selectedVariants)}
                   </div>
                 </td>
                 <td className="px-2 py-6 sm:px-4">
                   {item.discountedPrice ? (
                     <>
                       <div className="font-medium">
-                        Rs.{item?.discountedPrice?.toFixed(2)}
+                        Rs.{item?.discountedPrice}
                       </div>
                       <div className="text-sm text-gray-400 line-through">
-                        Rs.{item.price.toFixed(2)}
+                        Rs.{item.price}
                       </div>
                     </>
                   ) : (
-                    <div className="font-medium">
-                      Rs.{item?.price?.toFixed(2)}
-                    </div>
+                    <div className="font-medium">Rs.{item?.price}</div>
                   )}
                 </td>
                 <td className="px-2 py-6 sm:px-4">
                   <div className="border-platinum-2 mx-auto flex max-w-[180px] items-center justify-center border">
                     <button
                       className="w-full px-3 py-1 text-lg font-bold"
-                      onClick={() => dispatch(decreaseQuantity(item.id))}
+                      onClick={() =>
+                        dispatch(
+                          decreaseQuantity({
+                            id: item.id,
+                            selectedVariants: item.selectedVariants,
+                          }),
+                        )
+                      }
                     >
                       -
                     </button>
@@ -138,7 +132,14 @@ const CartPage: React.FC = () => {
                     </p>
                     <button
                       className="w-full px-3 py-1 text-lg font-bold"
-                      onClick={() => dispatch(increaseQuantity(item.id))}
+                      onClick={() =>
+                        dispatch(
+                          increaseQuantity({
+                            id: item.id,
+                            selectedVariants: item.selectedVariants,
+                          }),
+                        )
+                      }
                     >
                       +
                     </button>
@@ -151,11 +152,7 @@ const CartPage: React.FC = () => {
                       dispatch(
                         removeFromCart({
                           id: item.id,
-                          selectedVariants: {
-                            color: item.selectedVariants.color,
-                            size: item.selectedVariants.size,
-                            fit: item.selectedVariants.fit,
-                          },
+                          selectedVariants: item.selectedVariants, // Pass the entire variants object
                         }),
                       )
                     }
@@ -165,9 +162,7 @@ const CartPage: React.FC = () => {
                 </td>
                 <td className="text-red px-2 py-6 font-semibold sm:px-4">
                   Rs.
-                  {(
-                    (item?.discountedPrice ?? item.price) * item.quantity
-                  ).toFixed(2)}
+                  {(item?.discountedPrice ?? item.price) * item.quantity}
                 </td>
               </tr>
             ))}
@@ -188,7 +183,7 @@ const CartPage: React.FC = () => {
             <span className="inline-block text-right text-[15px]">
               Subtotal :
             </span>{" "}
-            <span className="font-medium">RS.{subtotal.toFixed(2)}</span>
+            <span className="font-medium">RS.{subtotal}</span>
           </div>
           <div className="mb-2 flex w-full max-w-3xs items-center justify-between text-right">
             <span className="inline-block text-right text-[15px]">
@@ -198,7 +193,7 @@ const CartPage: React.FC = () => {
           </div>
           <div className="mb-6 flex w-full max-w-3xs items-center justify-between text-right">
             <span className="inline-block text-right text-[15px]">Total :</span>{" "}
-            <span className="font-medium">RS.{subtotal.toFixed(2)}</span>
+            <span className="font-medium">RS.{subtotal}</span>
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:flex-row lg:gap-4">

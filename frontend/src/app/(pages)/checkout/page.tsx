@@ -1,7 +1,7 @@
 "use client";
 import { IMAGES } from "@/constants/images";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { clearCart } from "@/redux/slices/cartSlice";
+import { clearCart, formatVariantsForDisplay } from "@/redux/slices/cartSlice";
 import { fetchUserProfile } from "@/redux/slices/userSlice";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,6 +13,7 @@ import { z } from "zod";
 import api from "@/utils/axiosInstance";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import renderVariantInfo from "@/utils/renderVariantInfo";
 
 // Country and state mappings
 const COUNTRIES = [
@@ -98,11 +99,7 @@ interface OrderApiPayload {
   items: Array<{
     product: string;
     quantity: number;
-    selectedVariant?: {
-      color?: string;
-      size?: string;
-      fit?: string;
-    };
+    selectedVariant?: Record<string, string>;
   }>;
 }
 
@@ -162,6 +159,16 @@ const CheckoutPage: React.FC = () => {
     shipping: 0,
     grandTotal: 0,
   });
+
+  // Helper function to render variant information generically
+
+  // Alternative: Single line variant display using the helper from cart slice
+  const renderVariantsSingleLine = (variants: Record<string, string>) => {
+    const variantText = formatVariantsForDisplay(variants);
+    return variantText ? (
+      <div className="text-sm text-gray-600">{variantText}</div>
+    ) : null;
+  };
 
   // Fetch user profile if not already loaded
   useEffect(() => {
@@ -277,29 +284,12 @@ const CheckoutPage: React.FC = () => {
     setSubmitError(null);
 
     try {
-      // Transform cart items to match API format
+      // Transform cart items to match API format with generic variant handling
       const transformedItems = cartItems.map((item) => ({
         product: item.id.toString(),
         quantity: item.quantity,
-        selectedVariant: {
-          ...(item.selectedVariants?.color && {
-            color: item.selectedVariants.color,
-          }),
-          ...(item.selectedVariants?.size && {
-            size: item.selectedVariants.size,
-          }),
-          ...(item.selectedVariants?.fit && { fit: item.selectedVariants.fit }),
-
-          // ...(item.selectedVariants
-          //   ? Object.keys(item.selectedVariants).reduce(
-          //       (variantObj, key) => ({
-          //         ...variantObj,
-          //         [key]: item.selectedVariants[key]
-          //       }),
-          //       {},
-          //     )
-          //   : {}),
-        },
+        // Pass the entire selectedVariants object generically
+        selectedVariant: item.selectedVariants || {},
       }));
 
       // Prepare order payload
@@ -387,30 +377,6 @@ const CheckoutPage: React.FC = () => {
               <h2 className="text-grey-2 mb-6 text-xl font-semibold lg:text-2xl">
                 Shipping Details
               </h2>
-
-              {/* Register/Guest */}
-              {/* <div className="mb-6 flex items-center gap-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="accountType"
-                    value="register"
-                    className="mr-2"
-                    defaultChecked={!!currentUser}
-                  />
-                  <span className="text-chinese-black">Register</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="accountType"
-                    value="guest"
-                    className="mr-2"
-                    defaultChecked={!currentUser}
-                  />
-                  <span className="text-chinese-black">Guest</span>
-                </label>
-              </div> */}
 
               {/* Form Fields */}
               <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -616,7 +582,7 @@ const CheckoutPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Section - Order Summary (keeping existing code) */}
+          {/* Right Section - Order Summary */}
           <div className="">
             <div className="rounded-lg bg-white">
               {/* Order Summary Header */}
@@ -670,15 +636,11 @@ const CheckoutPage: React.FC = () => {
                           />
                           <div>
                             <div>{item.name}</div>
-                            {item.selectedVariants &&
-                              Object.entries(item.selectedVariants).map(
-                                ([key, value]) => (
-                                  <div key={key}>
-                                    {key.charAt(0).toUpperCase() + key.slice(1)}
-                                    : {value}
-                                  </div>
-                                ),
-                              )}
+                            {/* Generic variant display - using the same approach as cart component */}
+                            {renderVariantInfo(item.selectedVariants)}
+
+                            {/* Alternative: Single line display (uncomment to use instead) */}
+                            {/* {renderVariantsSingleLine(item.selectedVariants)} */}
                           </div>
                         </div>
                         <div className="col-span-2">

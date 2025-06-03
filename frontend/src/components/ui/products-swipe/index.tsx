@@ -3,37 +3,16 @@ import React, { useEffect } from "react";
 import { Autoplay, Navigation } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import ProductCard from "../product-card";
-
-import { ProductListItem } from "@/components/new-arrival";
-import { PRODUCTS } from "@/data/products";
 import api from "@/utils/axiosInstance";
 import { Product } from "@/types";
 import { useAppSelector } from "@/redux/hooks";
-// const products: ProductListItem[] = PRODUCTS.map((prod) => {
-//   return {
-//     id: prod.id,
-//     categoryId: prod.categoryId,
-//     frontImage: prod.images[0],
-//     backImage: prod.images[1],
-//     title: prod.name,
-//     sizes: prod.variants.sizes,
-//     fits: prod.variants.fits,
-//     colors: prod.variants.colors,
-//     description: prod.description,
-//     price: prod.price,
-//     ...(prod.discountedPrice != null && {
-//       discountedPrice: prod.discountedPrice,
-//     }),
-//   };
-// });
+
 function ProductSwipe({
-  // products,
   recentlyViewed,
   categoryId,
   heading,
 }: {
-  // products?: ProductType[];
-  categoryId?: number;
+  categoryId?: string;
   recentlyViewed?: boolean;
   heading: string;
 }) {
@@ -42,7 +21,6 @@ function ProductSwipe({
     (state) => state.user.recentlyViewedProducts,
   );
 
-  console.log("my recenterly viewd products ........ ", recentlyViewedProducts);
   useEffect(() => {
     async function fetchProducts() {
       const res = await api.get("/products", {
@@ -96,21 +74,10 @@ function ProductSwipe({
             },
           }}
         >
-          {products.map((item, index) => (
+          {products.map((prod, index) => (
             <SwiperSlide key={index} className="h-full w-full">
               <div className="h-[50vh] max-h-[500px] sm:h-[70vh] xl:max-h-full">
-                <ProductCard
-                  id={item.id}
-                  frontImage={item.images[0]}
-                  backImage={item.images[1]}
-                  slug={item.slug}
-                  title={item.name}
-                  description={item.description}
-                  colors={item.variants?.colors}
-                  sizes={item.variants?.sizes}
-                  fits={item.variants?.fits}
-                  price={item.price}
-                />
+                <ProductCard product={prod} />
               </div>
             </SwiperSlide>
           ))}

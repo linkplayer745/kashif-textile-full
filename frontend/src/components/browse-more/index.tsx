@@ -3,11 +3,8 @@ import { cn } from "@/utils/cn";
 import React, { useEffect, useState } from "react";
 import ProductCard from "../ui/product-card";
 import { motion, AnimatePresence } from "framer-motion";
-import { ProductListItem } from "../new-arrival";
 import api from "@/utils/axiosInstance";
 import { Category, Product } from "@/types";
-
-
 
 function BrowseMore() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -19,8 +16,7 @@ function BrowseMore() {
       try {
         const res = await api.get("/category/all", { params: { limit: 3 } });
 
-        console.log("categories are .... ", res.data)
-        const fetchedCategories: Category[] = res.data.results// adjust based on actual API shape
+        const fetchedCategories: Category[] = res.data.results; // adjust based on actual API shape
         setCategories(fetchedCategories);
         if (fetchedCategories.length > 0) {
           setCategory(fetchedCategories[0].id);
@@ -82,7 +78,7 @@ function BrowseMore() {
               onClick={() => setCategory(cat.id)}
               className={cn(
                 "cursor-pointer text-sm capitalize transition-colors duration-500 sm:text-base lg:text-xl",
-                cat.id === category ? "text-red" : "text-black"
+                cat.id === category ? "text-red" : "text-black",
               )}
             >
               {cat.name}
@@ -104,19 +100,7 @@ function BrowseMore() {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.4 }}
             >
-              <ProductCard
-                id={product.id}
-                sizes={product.variants.sizes}
-                frontImage={product.images[0]}
-                colors={product.variants.colors}
-                fits={product.variants.fits}
-                slug={product.slug}
-                backImage={product.images[1]}
-                description={product.description}
-                title={product.name}
-                discountedPrice={product.discountedPrice}
-                price={product.price}
-              />
+              <ProductCard product={product} />
             </motion.div>
           ))}
         </motion.div>

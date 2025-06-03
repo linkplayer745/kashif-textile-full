@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import InnerImageZoom from "react-inner-image-zoom";
 import "inner-image-zoom/lib/styles.min.css";
 import { TbRulerMeasure } from "react-icons/tb";
-
 import { FaFacebookF } from "react-icons/fa";
 import { FaTwitter } from "react-icons/fa";
 import { FaPinterest } from "react-icons/fa";
@@ -14,23 +13,25 @@ import { FaCartShopping } from "react-icons/fa6";
 import { IoPersonOutline } from "react-icons/io5";
 import ProductSwipe from "@/components/ui/products-swipe";
 import { useParams } from "next/navigation";
-import { CATEGORIES, DetailedProduct } from "@/data/products";
-import { useAppDispatch } from "@/redux/hooks";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { addToCart } from "@/redux/slices/cartSlice";
 import { FiLoader } from "react-icons/fi";
-import { cn } from "@/utils/cn";
 import api from "@/utils/axiosInstance";
 import { addRecentlyViewedProduct } from "@/redux/slices/userSlice";
+import { Product } from "@/types";
+import { renderVariant } from "@/utils/renderVariant";
 
 export default function ProductPage() {
   const params = useParams();
-
   const dispatch = useAppDispatch();
+  const categories = useAppSelector((state) => state.category.categories);
 
-  const [product, setProduct] = useState<DetailedProduct | null>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
-  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedVariants, setSelectedVariants] = useState<
+    Record<string, string>
+  >({});
   const [activeAccordian, setActiveAccordian] = useState<number | null>(0);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -41,9 +42,19 @@ export default function ProductPage() {
       try {
         const foundProduct = await api.get(`/products/get/${slug}`);
         if (foundProduct) {
-          setProduct(foundProduct.data);
-          console.log("found .... ", foundProduct.data.id);
-          dispatch(addRecentlyViewedProduct(foundProduct.data.id));
+          const productData = foundProduct.data;
+
+          const initialSelectedVariants: Record<string, string> = {};
+          Object.keys(productData.variants).forEach((variantType) => {
+            if (productData.variants[variantType]?.length > 0) {
+              initialSelectedVariants[variantType] =
+                productData.variants[variantType][0].name;
+            }
+          });
+
+          setProduct(productData);
+          setSelectedVariants(initialSelectedVariants);
+          dispatch(addRecentlyViewedProduct(productData.id));
         }
       } catch (error) {
         console.log("Error fetching products:", error);
@@ -53,6 +64,53 @@ export default function ProductPage() {
     };
     fetchProducts();
   }, [params.slug]);
+
+  const handleVariantSelect = (variantType: string, optionName: string) => {
+    if (!product) return;
+
+    setSelectedVariants((prev) => ({
+      ...prev,
+      [variantType]: optionName,
+    }));
+
+    const updatedVariants = { ...product.variants };
+    updatedVariants[variantType] = updatedVariants[variantType].map(
+      (option) => ({
+        ...option,
+        selected: option.name === optionName,
+      }),
+    );
+
+    setProduct({
+      ...product,
+      variants: updatedVariants,
+    });
+  };
+
+  const decrementQuantity = () => {
+    if (quantity > 1) {
+      setQuantity(quantity - 1);
+    }
+  };
+
+  const incrementQuantity = () => {
+    setQuantity(quantity + 1);
+  };
+
+  const handleAddToCart = async () => {
+    await dispatch(
+      addToCart({
+        id: product!.id,
+        name: product!.name,
+        price: product!.price,
+        discountedPrice: product!.discountedPrice,
+        quantity: quantity,
+        selectedVariants: selectedVariants,
+        image: product!.images[0],
+      }),
+    );
+    setQuantity(1);
+  };
 
   if (!isLoaded && !product) {
     return (
@@ -71,96 +129,6 @@ export default function ProductPage() {
     );
   }
 
-  const selectedColor =
-    product?.variants?.colors.find((color) => color.selected)?.name || "";
-  const selectedFit =
-    product?.variants?.fits?.find((fit) => fit.selected)?.name || "";
-
-  // Handle color selection
-  const handleColorSelect = (colorName: string) => {
-    if (!product) return;
-
-    const updatedColors = product.variants.colors.map((color) => ({
-      ...color,
-      selected: color.name === colorName,
-    }));
-
-    setProduct({
-      ...product,
-      variants: {
-        ...product.variants,
-        colors: updatedColors,
-      },
-    });
-  };
-
-  // Handle fit selection
-  const handleFitSelect = (fitName: string) => {
-    if (!product) return;
-
-    const updatedFits = product?.variants?.fits?.map((fit) => ({
-      ...fit,
-      selected: fit.name === fitName,
-    }));
-
-    setProduct({
-      ...product,
-      variants: {
-        ...product.variants,
-        fits: updatedFits,
-      },
-    });
-  };
-
-  // Handle size selection
-  const handleSizeSelect = (sizeName: string) => {
-    if (!product) return;
-
-    const updatedSizes = product.variants.sizes.map((size) => ({
-      ...size,
-      selected: size.name === sizeName,
-    }));
-
-    setProduct({
-      ...product,
-      variants: {
-        ...product.variants,
-        sizes: updatedSizes,
-      },
-    });
-
-    setSelectedSize(sizeName);
-  };
-
-  // Handle quantity change
-  const decrementQuantity = () => {
-    if (quantity > 1) {
-      setQuantity(quantity - 1);
-    }
-  };
-
-  const incrementQuantity = () => {
-    setQuantity(quantity + 1);
-  };
-
-  const handleAddToCart = async () => {
-    await dispatch(
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        discountedPrice: product.discountedPrice,
-        quantity: quantity,
-        selectedVariants: {
-          size: selectedSize,
-          color: selectedColor,
-          fit: selectedFit,
-        },
-        image: product.images[0],
-      }),
-    );
-    setQuantity(1);
-  };
   return (
     <div className="main-padding mx-auto mt-16 lg:mt-20">
       {/* Breadcrumb */}
@@ -173,7 +141,10 @@ export default function ProductPage() {
           href={`/category/${product.categoryId}`}
           className="cursor-pointer"
         >
-          {CATEGORIES.find((cat) => cat.id === product.categoryId)?.title}
+          {
+            categories.find((category) => category.id === product.categoryId)
+              ?.name
+          }
         </Link>
         <span className="mx-2">|</span>
         <span>{product.name}</span>
@@ -311,6 +282,7 @@ export default function ProductPage() {
             </Accordion>
           </div>
         </div>
+
         {/* Add to cart Section */}
         <div className="border-light-gray flex w-full flex-col items-center border px-5 pt-10 pb-[30px]">
           {/* Price */}
@@ -323,7 +295,6 @@ export default function ProductPage() {
             )}
           </div>
 
-          {/* Size Chart */}
           <div className="mb-4 flex items-center justify-between">
             <div className="font-medium">
               <span className="flex items-center gap-2">
@@ -332,84 +303,21 @@ export default function ProductPage() {
               </span>
             </div>
           </div>
-          {/* Color Selection */}
-          {product?.variants?.colors && (
-            <>
-              <div className="mb-4">
-                <p className="font-medium">
-                  Select Color:{" "}
-                  <span className="font-normal">{selectedColor}</span>
-                </p>
-                <div className="my-2 flex items-start justify-center space-x-2">
-                  {product.variants.colors.map((color, index) => (
-                    <button
-                      className={`rounded-t outline`}
-                      aria-label={`Select ${color.name} color`}
-                      onClick={() => handleColorSelect(color.name)}
-                      key={index}
-                    >
-                      <div
-                        className="h-9 w-14 rounded-t"
-                        style={{ backgroundColor: color.code }}
-                      ></div>
-                      <div
-                        className={cn(
-                          "w-14 border-t py-2 text-[12px] font-medium",
-                          selectedColor === color.name
-                            ? "bg-gold text-white"
-                            : "bg-white text-black",
-                        )}
-                      >
-                        {color.name}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
 
-          {/* Fit Selection */}
-          <div className="my-4">
-            {product?.variants?.fits && (
-              <p className="mx-auto w-fit pb-3 font-medium">
-                Select Fit: <span className="font-normal">{selectedFit}</span>
-              </p>
+          {product.variants &&
+            Object.keys(product.variants).map(
+              (variantType) =>
+                product.variants[variantType]?.length > 0 &&
+                renderVariant({
+                  variantType,
+                  options: product.variants[variantType],
+                  handleVariantSelect,
+                  selectedVariants,
+                  buttonsAlign: "center",
+                  headingAlign: "center",
+                }),
             )}
 
-            <div className="flex flex-wrap justify-center gap-2">
-              {product.variants?.fits?.map((fit, index) => (
-                <button
-                  key={index}
-                  className={`border px-4 py-2 text-[12px] font-semibold ${fit.selected ? "bg-platinum border-gray-700" : "border-gray-300"} text-center`}
-                  onClick={() => handleFitSelect(fit.name)}
-                >
-                  {fit.name.toUpperCase()}
-                </button>
-              ))}
-            </div>
-          </div>
-          {/* Size Selection */}
-          <div className="mb-6">
-            <div className="mb-2">
-              <p className="text-center font-medium">
-                Select Size: {selectedSize}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {product.variants.sizes.map((size, index) => (
-                <button
-                  key={index}
-                  className={`flex h-12 min-w-12 items-center justify-center rounded-full border px-2 ${size.selected ? "border-gray-700 bg-gray-100" : "border-gray-300"}`}
-                  onClick={() => handleSizeSelect(size.name)}
-                >
-                  {size.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Quantity Selection */}
           <div className="mt-4 mb-6">
             <p className="mb-2 text-center font-medium">Quantity</p>
             <div className="flex">
@@ -442,7 +350,6 @@ export default function ProductPage() {
             </button>
           </div>
 
-          {/* Need Help */}
           <div className="mt-6 flex w-full flex-col items-center bg-black/3 py-3">
             <div className="flex items-center gap-2">
               <IoPersonOutline className="size-5" />
@@ -466,7 +373,6 @@ export default function ProductPage() {
       <ProductSwipe
         heading="Similar Products"
         categoryId={product.categoryId}
-        // products={[{backImage}]}
       />
 
       <ProductSwipe heading="Recent Viewed Products" recentlyViewed />

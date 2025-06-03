@@ -8,8 +8,15 @@ import {
 import Image from "next/image";
 import { IMAGES } from "@/constants/images";
 import Link from "next/link";
+import { Category } from "@/types";
 
-export default function Footer() {
+export const revalidation = 60;
+export default async function Footer() {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/category/all?limit=4`,
+  );
+  const data = await response.json();
+  const categories = data?.results;
   return (
     <footer className="text-chinese-black bg-white pt-5 sm:pt-10 lg:pt-24">
       <div className="main-padding grid grid-cols-1 gap-10 py-10 lg:grid-cols-5">
@@ -80,15 +87,11 @@ export default function Footer() {
         <div>
           <h3 className="mb-3 text-lg font-medium">Main Menu</h3>
           <ul className="space-y-3 text-sm">
-            {[
-              { label: "Summer Tracksuits", link: "/category/8" },
-              { label: "Polo Shirts", link: "/category/1" },
-              { label: "Kids Collections", link: "/category/7" },
-              { label: "Trousers & Shorts", link: "/category/3" },
-              { label: "Contact", link: "/contact" },
-            ].map((item, index) => (
+            {categories.map((item: Category, index: number) => (
               <li className="group relative w-fit cursor-pointer" key={index}>
-                <Link href={item.link}>{item.label}</Link>
+                <Link className="capitalize" href={`category/${item.slug}`}>
+                  {item.name}
+                </Link>
 
                 <span className="border-red absolute -bottom-1 left-0 w-0 transform border-b-2 duration-300 ease-in group-hover:w-full" />
               </li>
