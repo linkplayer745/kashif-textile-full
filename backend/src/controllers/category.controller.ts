@@ -61,9 +61,7 @@ const updateCategory = catchAsync(async (req: Request, res: Response) => {
     imageFile,
   );
 
-  res.status(httpStatus.OK).send({
-    category,
-  });
+  res.status(httpStatus.OK).send(category);
 });
 
 const categoryController = {

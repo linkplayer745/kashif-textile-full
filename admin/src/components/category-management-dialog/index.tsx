@@ -71,7 +71,7 @@ export default function CategoryManagementDialog() {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button type="button" variant="outline" size="sm">
           Manage Categories
         </Button>
       </DialogTrigger>

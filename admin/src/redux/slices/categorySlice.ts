@@ -110,7 +110,7 @@ export const categorySlice = createSlice({
         state.categories = state.categories.filter(
           (category) => category.id !== action.payload,
         );
-        toast("Category deleted successfully");
+        toast.success("Category deleted successfully");
       })
       .addCase(deleteCategory.rejected, (state, action) => {
         toast.error(action.error.message || "Failed to delete category");
@@ -118,10 +118,9 @@ export const categorySlice = createSlice({
 
       .addCase(addCategory.fulfilled, (state, action) => {
         state.categories.push(action.payload);
-        toast("Category added successfully");
+        toast.success("Category added successfully");
       })
       .addCase(addCategory.rejected, (state, action) => {
-        console.log("the actins is ", action);
         toast.error(action.error.message || "Failed to add category");
       })
 
@@ -132,7 +131,7 @@ export const categorySlice = createSlice({
         );
         if (index !== -1) {
           state.categories[index] = updatedCategory;
-          toast("Category updated successfully");
+          toast.success("Category updated successfully");
         }
       })
       .addCase(updateCategory.rejected, (state, action) => {
