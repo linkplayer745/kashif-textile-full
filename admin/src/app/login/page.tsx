@@ -11,7 +11,7 @@ export default function LoginPage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      router.replace("/dashboard");
+      router.replace("/");
     }
   }, [router]);
 
@@ -36,7 +36,7 @@ export default function LoginPage() {
       }
 
       localStorage.setItem("token", data.token);
-      router.push("/dashboard");
+      router.push("/");
     } catch (error: any) {
       setError(error.message);
     }
