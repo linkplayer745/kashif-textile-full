@@ -34,7 +34,8 @@ const optionalAuth = async (
     req.user = user;
     next();
   } catch (err) {
-    next(new ApiError(httpStatus.UNAUTHORIZED, 'Unauthorized'));
+    console.log(err);
+    next();
   }
 };
 

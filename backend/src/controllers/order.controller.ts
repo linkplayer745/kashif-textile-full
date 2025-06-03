@@ -21,13 +21,19 @@ const createOrder = catchAsync(
 const getOrdersByUserId = catchAsync(
   async (req: AuthenticatedRequest, res: Response) => {
     const userId = req?.user?.id;
+    const orderId = req?.query?.orderId as string;
     const status = req.query.status as string;
     const statusFilter = status ? { status } : {};
-    const filters = {
-      user: userId,
-      ...statusFilter,
-    };
+    const filters: Record<string, any> = {};
+    if (userId && Types.ObjectId.isValid(userId)) {
+      filters.user = new Types.ObjectId(userId);
+    }
 
+    if (orderId && Types.ObjectId.isValid(orderId)) {
+      filters._id = new Types.ObjectId(orderId);
+    }
+
+    Object.assign(filters, statusFilter);
     const options = pick(req.query, ['sortBy', 'limit', 'page']);
 
     const orders = await orderService.getOrdersByUserId(filters, options);

@@ -28,7 +28,9 @@ export interface CreateOrderDto {
   // shippingCost: number;
 }
 
-const createOrder = async (dto: CreateOrderDto): Promise<IOrderDocument> => {
+const createOrder = async (
+  dto: CreateOrderDto,
+): Promise<IOrderDocument | undefined> => {
   const { items, userId, ...shipping } = dto;
   const shippingCost = 200;
   // 1) Fetch all product docs in one go
