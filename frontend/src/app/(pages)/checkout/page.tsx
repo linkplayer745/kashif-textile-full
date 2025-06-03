@@ -303,15 +303,15 @@ const CheckoutPage: React.FC = () => {
       if (!response.status || response.status >= 400) {
         toast.error("Failed to create order");
       } else {
+        toast("Order placed successfully!", {
+          position: "bottom-right",
+        });
         dispatch(clearCart());
         if (currentUser) {
           router.push("/dashboard/orders");
         } else {
           router.push("/");
         }
-        toast("Order placed successfully!", {
-          position: "bottom-right",
-        });
       }
     } catch (error) {
       setSubmitError(
@@ -342,9 +342,9 @@ const CheckoutPage: React.FC = () => {
                   <span className="text-chinese-black font-semibold">
                     Returning Customer?
                   </span>
-                  <a href="#" className="text-red font-semibold">
+                  <Link href="/login" className="text-red font-semibold">
                     Click here to login
-                  </a>
+                  </Link>
                 </div>
               </div>
             )}

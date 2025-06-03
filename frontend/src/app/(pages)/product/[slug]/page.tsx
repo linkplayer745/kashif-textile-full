@@ -137,10 +137,7 @@ export default function ProductPage() {
           Home
         </Link>
         <span className="mx-2">|</span>
-        <Link
-          href={`/category/${product.categoryId}`}
-          className="cursor-pointer"
-        >
+        <Link href={`/category/${product.slug}`} className="cursor-pointer">
           {
             categories.find((category) => category.id === product.categoryId)
               ?.name
