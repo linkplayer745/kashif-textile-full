@@ -19,6 +19,8 @@ router
 
 router.get('/user-orders', auth, orderController.getOrdersByUserId);
 
+router.get('/order-stats', auth, orderController.getUserOrderStats);
+
 router.patch(
   '/:orderId',
   adminAuth,

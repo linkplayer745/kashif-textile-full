@@ -1,7 +1,8 @@
-// src/pages/orders.tsx   (or /app/orders/page.tsx if using App Router)
+// src/pages/orders.tsx (or /app/orders/page.tsx if using App Router)
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Table,
   TableHeader,
@@ -35,8 +36,17 @@ import {
   Phone,
   FileText,
 } from "lucide-react";
-import api from "@/utils/axiosInstance";
 
+import {
+  fetchOrders,
+  setFilters,
+  clearFilters,
+  setPage,
+  setLimit,
+} from "@/redux/slices/orderSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+
+// Types (you can move these to a separate types file)
 interface OrderItem {
   product: string;
   name: string;
@@ -72,36 +82,17 @@ interface Order {
   updatedAt: string;
 }
 
-interface PaginatedOrders {
-  results: Order[];
-  page: number;
-  limit: number;
-  totalPages: number;
-  totalResults: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-}
-
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [page, setPage] = useState<number>(1);
-  const [limit, setLimit] = useState<number>(10);
-  const [totalPages, setTotalPages] = useState<number>(1);
-  const [totalResults, setTotalResults] = useState<number>(0);
-  const [hasNextPage, setHasNextPage] = useState<boolean>(false);
-  const [hasPrevPage, setHasPrevPage] = useState<boolean>(false);
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "succeeded" | "failed"
-  >("idle");
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
 
-  // Filter values (orderId, status):
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({
-    orderId: "",
-    status: "",
-  });
+  // Select data from Redux store
+  const orders = useAppSelector((state) => state.order.orders);
+  const status = useAppSelector((state) => state.order.status);
+  const error = useAppSelector((state) => state.order.error);
+  const pagination = useAppSelector((state) => state.order.pagination);
+  const filters = useAppSelector((state) => state.order.filters);
 
-  // Define status options for the “select” filter
+  // Define status options for the "select" filter
   const ORDER_STATUS_OPTIONS = [
     { value: "pending", label: "Pending" },
     { value: "paid", label: "Paid" },
@@ -125,70 +116,40 @@ export default function OrdersPage() {
     },
   ];
 
-  // Whenever page/limit/filterValues change, re‐fetch.
+  // Fetch orders when component mounts or when pagination/filters change
   useEffect(() => {
-    fetchOrdersFromServer();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, filterValues]);
-
-  const fetchOrdersFromServer = async () => {
-    setStatus("loading");
-    setError(null);
-
-    try {
-      const params: Record<string, any> = {
-        page,
-        limit,
-      };
-      if (filterValues.orderId) {
-        params.orderId = filterValues.orderId;
-      }
-      if (filterValues.status) {
-        params.status = filterValues.status;
-      }
-      params.sortBy = "createdAt:desc";
-      // Assume your backend route is GET /orders/me
-      const resp = await api.get<PaginatedOrders>("/order/user-orders", {
-        params,
-      });
-      const data = resp.data;
-
-      setOrders(data.results);
-      setPage(data.page);
-      setLimit(data.limit);
-      setTotalPages(data.totalPages);
-      setTotalResults(data.totalResults);
-      setHasNextPage(data.hasNextPage);
-      setHasPrevPage(data.hasPrevPage);
-      setStatus("succeeded");
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message || err.message || "Failed to fetch orders",
-      );
-      setStatus("failed");
-    }
-  };
+    dispatch(
+      fetchOrders({
+        page: pagination.page,
+        limit: pagination.limit,
+        orderId: filters.orderId || undefined,
+        status: filters.status || undefined,
+      }),
+    );
+  }, [
+    dispatch,
+    pagination?.page,
+    pagination?.limit,
+    filters?.orderId,
+    filters?.status,
+  ]);
 
   const handleFilterChange = (key: string, value: string) => {
-    setFilterValues((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-    setPage(1);
+    dispatch(setFilters({ [key]: value }));
+    dispatch(setPage(1)); // Reset to first page when filtering
   };
 
   const handleClearFilters = () => {
-    setFilterValues({ orderId: "", status: "" });
-    setPage(1);
+    dispatch(clearFilters());
+    dispatch(setPage(1));
   };
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage);
+    dispatch(setPage(newPage));
   };
 
   const handleLimitChange = (newLimit: number) => {
-    setLimit(newLimit);
-    setPage(1);
+    dispatch(setLimit(newLimit));
   };
 
   const getStatusBadge = (stat: string) => {
@@ -249,7 +210,11 @@ export default function OrdersPage() {
           <div>
             <p className="text-sm text-gray-600">Order Date</p>
             <p className="font-medium">
-              {new Date(order.createdAt).toLocaleDateString()}
+              {new Intl.DateTimeFormat("en-GB", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              }).format(new Date(order.createdAt))}
             </p>
           </div>
           <div>
@@ -390,12 +355,6 @@ export default function OrdersPage() {
     </DialogContent>
   );
 
-  // return null;
-  // (Note: the above `return null;` is never reached—we always render the above JSX for the Dialog)
-  // But TS/next/jsc expects a return type, so we include it as a fallback.
-  // In practice, you could factor <OrderDetailsModal> as a separate component file.
-  // };
-
   return (
     <div className="space-y-6 px-4 py-6">
       <div>
@@ -406,7 +365,7 @@ export default function OrdersPage() {
       {/* Filters row */}
       <Filters
         filters={filterConfigs}
-        values={filterValues}
+        values={filters}
         onFilterChange={handleFilterChange}
         onClearFilters={handleClearFilters}
       />
@@ -477,7 +436,6 @@ export default function OrdersPage() {
                           </DialogTrigger>
                           <OrderDetailsModal order={order} />
                         </Dialog>
-                        {/* No other actions—just “Details” */}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -489,12 +447,12 @@ export default function OrdersPage() {
           {/* Pagination controls */}
           <div className="mt-6">
             <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              totalResults={totalResults}
-              limit={limit}
-              hasNextPage={hasNextPage}
-              hasPrevPage={hasPrevPage}
+              currentPage={pagination.page}
+              totalPages={pagination.totalPages}
+              totalResults={pagination.totalResults}
+              limit={pagination.limit}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
               onPageChange={handlePageChange}
               onLimitChange={handleLimitChange}
             />

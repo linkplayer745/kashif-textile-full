@@ -18,6 +18,7 @@ import wishlistReduer from "./slices/wishlistSlice";
 import { createPersistStorage } from "@/utils/storage";
 import categoryReducer from "./slices/categorySlice";
 import userReducer from "./slices/userSlice";
+import orderReducer from "./slices/orderSlice";
 
 const rootReducer = combineReducers({
   user: userReducer,
@@ -25,6 +26,7 @@ const rootReducer = combineReducers({
   modal: modalReducer,
   wishlist: wishlistReduer,
   category: categoryReducer,
+  order: orderReducer,
 });
 const storage = createPersistStorage();
 const persistConfig = {

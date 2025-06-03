@@ -1,22 +1,18 @@
 "use client";
-
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   User,
   ShoppingBag,
   Heart,
-  MapPin,
-  Settings,
   LogOut,
   Menu,
   X,
   SettingsIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-// import { logout } from "../store/slices/userSlice"
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { useAppDispatch } from "@/redux/hooks";
 import { clearUser } from "@/redux/slices/userSlice";
 import { Separator } from "../ui/separator";
 
@@ -46,8 +42,6 @@ const navigationItems = [
 export function DashboardSidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
-  //   const user = useAppSelector((state) => state.user)
   const dispatch = useAppDispatch();
 
   const handleLogout = () => {
@@ -78,7 +72,7 @@ export function DashboardSidebar() {
         <div className="flex h-full flex-col">
           {/* User Profile Section */}
           <div className="border-b border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-800">John Doe</h2>
+            <h2 className="text-lg font-semibold text-gray-800">Dashboard</h2>
           </div>
 
           {/* Navigation */}

@@ -107,10 +107,33 @@ const updateOrderStatus = async (
   await order.save();
   return order;
 };
+const getUserOrderStats = async (userId: string | Types.ObjectId) => {
+  // Ensure userId is an ObjectId
+  const userObjectId =
+    typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
 
+  // Count total orders for this user
+  const totalOrdersPromise = Order.countDocuments({
+    user: userObjectId,
+  }).exec();
+
+  // Count only those orders with status "pending"
+  const pendingOrdersPromise = Order.countDocuments({
+    user: userObjectId,
+    status: 'pending',
+  }).exec();
+
+  const [totalOrders, pendingOrders] = await Promise.all([
+    totalOrdersPromise,
+    pendingOrdersPromise,
+  ]);
+
+  return { totalOrders, pendingOrders };
+};
 export default {
   getOrders,
   createOrder,
   updateOrderStatus,
   getOrdersByUserId,
+  getUserOrderStats,
 };

@@ -73,11 +73,21 @@ const updateOrderStatus = catchAsync(
     res.status(httpStatus.OK).send(order);
   },
 );
+
+const getUserOrderStats = catchAsync(
+  async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req?.user?.id;
+    const orderStats = await orderService.getUserOrderStats(userId);
+    res.status(httpStatus.OK).send(orderStats);
+  },
+);
+
 const orderController = {
   updateOrderStatus,
   getOrders,
   createOrder,
   getOrdersByUserId,
+  getUserOrderStats,
 };
 
 export default orderController;

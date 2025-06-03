@@ -109,8 +109,6 @@ const orderSchema = new Schema<IOrderDocument, IOrderModel>(
   },
   {
     timestamps: true,
-    // toJSON: { virtuals: true },
-    // toObject: { virtuals: true },
   },
 );
 orderSchema.plugin(toJSON);
