@@ -21,11 +21,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { categoryApi } from "@/lib/category-api";
 import type { Category } from "@/lib/types";
 import CategoryForm from "@/components/category-form";
 import { useAppDispatch, useAppSelector } from "@/hooks/useStore";
-import { fetchCategories } from "@/redux/slices/categorySlice";
+import { deleteCategory, fetchCategories } from "@/redux/slices/categorySlice";
 
 export default function CategoriesPage() {
   const categories = useAppSelector((state) => state.category.categories);
@@ -46,16 +45,10 @@ export default function CategoriesPage() {
     }
   };
 
-  const deleteCategory = async (categoryId: string) => {
+  const onDeleteCategory = async (categoryId: string) => {
     if (!confirm("Are you sure you want to delete this category?")) return;
 
-    try {
-      await categoryApi.deleteCategory(categoryId);
-      toast.success("Category deleted successfully");
-      loadCategories();
-    } catch (error) {
-      toast.error("Failed to delete category");
-    }
+    dispatch(deleteCategory(categoryId));
   };
 
   const handleFormSuccess = () => {
@@ -146,7 +139,7 @@ export default function CategoriesPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => deleteCategory(category.id)}
+                        onClick={() => onDeleteCategory(category.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
