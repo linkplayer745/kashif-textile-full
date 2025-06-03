@@ -62,7 +62,7 @@ const checkoutSchema = z.object({
     .min(10, "Phone number must be at least 10 digits")
     .max(15, "Phone number is too long"),
   country: z.string().min(1, "Country is required"),
-  state: z.string().optional(),
+  state: z.string().min(1, "State is required"),
   city: z.string().min(1, "City is required"),
   postalCode: z.string().optional(),
   address1: z
@@ -160,16 +160,6 @@ const CheckoutPage: React.FC = () => {
     grandTotal: 0,
   });
 
-  // Helper function to render variant information generically
-
-  // Alternative: Single line variant display using the helper from cart slice
-  const renderVariantsSingleLine = (variants: Record<string, string>) => {
-    const variantText = formatVariantsForDisplay(variants);
-    return variantText ? (
-      <div className="text-sm text-gray-600">{variantText}</div>
-    ) : null;
-  };
-
   // Fetch user profile if not already loaded
   useEffect(() => {
     if (localStorage.getItem("token") && !currentUser) {
@@ -177,7 +167,6 @@ const CheckoutPage: React.FC = () => {
     }
   }, [dispatch, currentUser]);
 
-  // Auto-fill form when user data is available
   useEffect(() => {
     if (currentUser) {
       const autoFillData: Partial<CheckoutFormData> = {};
@@ -457,7 +446,7 @@ const CheckoutPage: React.FC = () => {
               <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <label className="text-chinese-black mb-1 block text-sm font-semibold">
-                    State / County
+                    State <span className="text-red-500">*</span>
                   </label>
                   <select
                     {...register("state")}
@@ -621,9 +610,9 @@ const CheckoutPage: React.FC = () => {
                       <div className="col-span-1 font-semibold">Qty</div>
                       <div className="col-span-2 font-semibold">Total</div>
                     </div>
-                    {cartItems.map((item) => (
+                    {cartItems.map((item, index) => (
                       <div
-                        key={item.id}
+                        key={index}
                         className="border-platinum grid grid-cols-8 gap-2 border-b py-2"
                       >
                         <div className="col-span-3 flex gap-4">

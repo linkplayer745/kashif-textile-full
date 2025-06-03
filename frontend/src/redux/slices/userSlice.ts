@@ -39,7 +39,6 @@ export const fetchUserProfile = createAsyncThunk(
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Failed to fetch profile";
-      toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
   },

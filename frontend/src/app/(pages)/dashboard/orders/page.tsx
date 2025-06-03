@@ -22,8 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import Pagination from "@/components/pagination";
 import Filters, { FilterConfig } from "@/components/filters";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+
 import {
   Package,
   Truck,
@@ -84,9 +83,6 @@ interface PaginatedOrders {
 }
 
 export default function OrdersPage() {
-  const router = useRouter();
-
-  // Local state to hold fetched orders & pagination metadata:
   const [orders, setOrders] = useState<Order[]>([]);
   const [page, setPage] = useState<number>(1);
   const [limit, setLimit] = useState<number>(10);
@@ -150,7 +146,7 @@ export default function OrdersPage() {
       if (filterValues.status) {
         params.status = filterValues.status;
       }
-
+      params.sortBy = "createdAt:desc";
       // Assume your backend route is GET /orders/me
       const resp = await api.get<PaginatedOrders>("/order/user-orders", {
         params,
