@@ -83,13 +83,7 @@ export const updateCategory = createAsyncThunk(
 export const categorySlice = createSlice({
   name: "products",
   initialState,
-  reducers: {
-    deleteCategory: (state, action) => {
-      state.categories = state.categories.filter(
-        (category) => category.id !== action.payload,
-      );
-    },
-  },
+  reducers: {},
   extraReducers: (builder) => {
     builder
       .addCase(fetchCategories.pending, (state) => {
