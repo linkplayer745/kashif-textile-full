@@ -12,7 +12,7 @@ export default function ProductCategoryPage() {
   const params = useParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(5);
+  const [limit, setLimit] = useState(12);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
