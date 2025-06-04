@@ -37,7 +37,7 @@ import CategoryManagementDialog from "../category-management-dialog";
 const productSchema = z
   .object({
     name: z.string().min(1, "Product name is required"),
-    price: z.number().min(0, "Price must be non-negative"),
+    price: z.number().min(1, "Price must be greater than 0"),
     discountedPrice: z
       .union([
         z.number().min(1, "Discount must be > 0"),
@@ -498,8 +498,7 @@ export default function ProductForm({
                         <Input
                           type="number"
                           min={0}
-                          step="0.01"
-                          placeholder="0.00"
+                          placeholder="0"
                           {...field}
                           onChange={(e) => {
                             const value = Number.parseFloat(e.target.value);
