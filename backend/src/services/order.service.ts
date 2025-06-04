@@ -31,7 +31,7 @@ const createOrder = async (
   dto: CreateOrderDto,
 ): Promise<IOrderDocument | undefined> => {
   const { items, userId, ...shipping } = dto;
-  const shippingCost = 200;
+  const shippingCost = 0;
   const productIds = items?.map((i) => i.product);
   const uniqueProductIds = [...new Set(productIds)];
 

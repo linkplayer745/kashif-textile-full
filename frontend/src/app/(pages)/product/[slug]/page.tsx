@@ -334,6 +334,12 @@ export default function ProductPage() {
                 <IoIosArrowForward className="size-4" />
               </button>
             </div>
+            {quantity > 1 && (
+              <p className="mt-2 text-center text-lg">
+                {quantity}x = Rs.
+                {quantity * (product?.discountedPrice ?? product.price)}
+              </p>
+            )}
           </div>
 
           {/* Add to Cart Button */}

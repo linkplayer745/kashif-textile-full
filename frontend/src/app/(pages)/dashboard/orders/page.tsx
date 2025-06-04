@@ -284,10 +284,12 @@ export default function OrdersPage() {
                   <p className="text-sm text-gray-600">Full Name</p>
                 </div>
               </div>
-              <div className="flex items-start gap-2">
-                <Mail className="mt-0.5 h-4 w-4 text-gray-500" />
-                <div>
-                  <p className="font-medium">{order.shipping.email}</p>
+              <div className="flex w-full items-start gap-2">
+                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-gray-500" />
+                <div className="min-w-0">
+                  <p className="font-medium break-words">
+                    {order.shipping.email}
+                  </p>
                   <p className="text-sm text-gray-600">Email</p>
                 </div>
               </div>

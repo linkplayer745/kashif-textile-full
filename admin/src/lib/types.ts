@@ -4,7 +4,7 @@ export interface Product {
   name: string;
   price: number;
   slug: string;
-  discountedPrice?: number;
+  discountedPrice?: number | null;
   description?: string;
   attributes?: Record<string, string>;
   variants?: Record<string, VariantOption[]>;

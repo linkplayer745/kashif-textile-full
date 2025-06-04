@@ -189,7 +189,7 @@ const CartPage: React.FC = () => {
             <span className="inline-block text-right text-[15px]">
               Shipping :
             </span>{" "}
-            <span className="font-medium">RS.0.00</span>
+            <span className="font-medium">RS.0</span>
           </div>
           <div className="mb-6 flex w-full max-w-3xs items-center justify-between text-right">
             <span className="inline-block text-right text-[15px]">Total :</span>{" "}

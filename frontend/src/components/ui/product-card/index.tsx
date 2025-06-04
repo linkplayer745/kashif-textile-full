@@ -29,7 +29,7 @@ function ProductCard({ product }: { product: Product }) {
       className="group relative block h-full w-full overflow-hidden"
     >
       {/* Front and back images */}
-      <div className="relative h-[70%] w-full">
+      <div className="relative h-[70%] w-full select-none">
         <Image
           height={300}
           width={250}

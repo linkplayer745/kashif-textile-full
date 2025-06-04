@@ -188,7 +188,6 @@ const cartSlice = createSlice({
 
     clearCart: (state) => {
       state.items = [];
-      toast.success("Cart cleared", { position: "bottom-right" });
     },
   },
 });

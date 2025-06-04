@@ -1,4 +1,4 @@
-import Product from '../models/product.model';
+import Product, { UpdateProductRequest } from '../models/product.model';
 import { IProduct } from '../models/product.model';
 import httpStatus from 'http-status';
 import ApiError from '../utils/apiError';
@@ -69,7 +69,7 @@ const addProduct = async (
 };
 const updateProduct = async (
   productId: string,
-  updateData: Partial<IProduct>,
+  updateData: Partial<UpdateProductRequest>,
   imageBuffers?: Express.Multer.File[],
 ) => {
   const product = await Product.findById(productId);
@@ -85,18 +85,51 @@ const updateProduct = async (
     }
   }
 
+  // Parse attributes if it's a string
   if (typeof updateData.attributes === 'string') {
-    updateData.attributes = JSON.parse(
-      updateData.attributes as unknown as string,
-    );
+    try {
+      updateData.attributes = JSON.parse(updateData.attributes);
+    } catch (error) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid attributes format');
+    }
   }
+
+  // Parse variants if it's a string
   if (typeof updateData.variants === 'string') {
-    updateData = {
-      ...updateData,
-      variants: JSON.parse(updateData.variants as unknown as string),
-    };
+    try {
+      updateData.variants = JSON.parse(updateData.variants);
+    } catch (error) {
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid variants format');
+    }
   }
+
+  if (updateData.discountedPrice === 'null') {
+    updateData.discountedPrice = null;
+  }
+  // Handle existing images parsing more safely
+  let existingImages: string[] = [];
+  if (updateData?.existingImages) {
+    if (Array.isArray(updateData.existingImages)) {
+      // Already an array
+      existingImages = updateData.existingImages;
+    } else if (typeof updateData.existingImages === 'string') {
+      try {
+        // Try to parse as JSON first
+        const parsed = JSON.parse(updateData.existingImages);
+        existingImages = Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        // If JSON parsing fails, treat as comma-separated string
+        existingImages = updateData.existingImages
+          .split(',')
+          .map((url) => url.trim())
+          .filter((url) => url.length > 0);
+      }
+    }
+  }
+
+  // Handle image updates
   if (imageBuffers && imageBuffers.length > 0) {
+    // Upload new images
     const uploadedImages = await Promise.all(
       imageBuffers.map((file) =>
         cloudinaryService.uploadToCloudinary(file.buffer, 'products'),
@@ -105,8 +138,16 @@ const updateProduct = async (
 
     const newImageUrls = uploadedImages.map((img) => img.secure_url);
 
+    // Combine existing images (that user wants to keep) with new uploaded images
+    updateData.images = [...existingImages, ...newImageUrls];
+
+    // Delete images that are no longer needed
+    const imagesToDelete = product.images.filter(
+      (url) => !existingImages.includes(url),
+    );
+
     await Promise.all(
-      product.images.map(async (url) => {
+      imagesToDelete.map(async (url) => {
         const publicIdMatch = url.match(/\/([^/]+)\.\w+$/);
         if (publicIdMatch) {
           const publicId = `products/${publicIdMatch[1]}`;
@@ -114,9 +155,28 @@ const updateProduct = async (
         }
       }),
     );
+  } else if (existingImages.length > 0) {
+    // If no new images but existing images are specified, just keep the existing ones
+    updateData.images = existingImages;
 
-    updateData.images = newImageUrls;
+    // Delete images that are no longer needed
+    const imagesToDelete = product.images.filter(
+      (url) => !existingImages.includes(url),
+    );
+
+    await Promise.all(
+      imagesToDelete.map(async (url) => {
+        const publicIdMatch = url.match(/\/([^/]+)\.\w+$/);
+        if (publicIdMatch) {
+          const publicId = `products/${publicIdMatch[1]}`;
+          await cloudinaryService.deleteImage(publicId);
+        }
+      }),
+    );
   }
+
+  // Remove existingImages from updateData as it's not a product field
+  delete updateData.existingImages;
 
   // Update the product document
   Object.assign(product, updateData);
@@ -124,7 +184,6 @@ const updateProduct = async (
 
   return product;
 };
-
 import { pick } from '../utils/pick';
 
 const getProducts = async (req: Request) => {

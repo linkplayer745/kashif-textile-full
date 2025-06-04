@@ -14,41 +14,7 @@ import api from "@/utils/axiosInstance";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import renderVariantInfo from "@/utils/renderVariantInfo";
-
-// Country and state mappings
-const COUNTRIES = [
-  { value: "Pakistan", label: "Pakistan" },
-  { value: "Bangladesh", label: "Bangladesh" },
-];
-
-const STATES = {
-  Pakistan: [
-    { value: "Punjab", label: "Punjab" },
-    { value: "Sindh", label: "Sindh" },
-    { value: "KPK", label: "KPK" },
-    { value: "Balochistan", label: "Balochistan" },
-  ],
-  Bangladesh: [
-    { value: "Dhaka", label: "Dhaka" },
-    { value: "Chittagong", label: "Chittagong" },
-    { value: "Sylhet", label: "Sylhet" },
-  ],
-};
-
-const CITIES = {
-  Pakistan: [
-    { value: "Karachi", label: "Karachi" },
-    { value: "Lahore", label: "Lahore" },
-    { value: "Islamabad", label: "Islamabad" },
-    { value: "Faisalabad", label: "Faisalabad" },
-    { value: "Rawalpindi", label: "Rawalpindi" },
-  ],
-  Bangladesh: [
-    { value: "Dhaka", label: "Dhaka" },
-    { value: "Chittagong", label: "Chittagong" },
-    { value: "Sylhet", label: "Sylhet" },
-  ],
-};
+import { CITIES, COUNTRIES, STATES } from "@/constants/address";
 
 // Zod validation schema
 const checkoutSchema = z.object({
@@ -303,7 +269,7 @@ const CheckoutPage: React.FC = () => {
       if (!response.status || response.status >= 400) {
         toast.error("Failed to create order");
       } else {
-        toast("Order placed successfully!", {
+        toast.success("Order placed successfully!", {
           position: "bottom-right",
         });
         dispatch(clearCart());

@@ -39,9 +39,13 @@ const productSchema = z
     name: z.string().min(1, "Product name is required"),
     price: z.number().min(0, "Price must be non-negative"),
     discountedPrice: z
-      .number()
-      .min(0, "Discounted price must be non-negative")
+      .union([
+        z.number().min(1, "Discount must be > 0"),
+        z.undefined(),
+        z.enum([""]),
+      ])
       .optional(),
+
     description: z.string().optional(),
     categoryId: z.string().min(1, "Category is required"),
     slug: z
@@ -117,10 +121,8 @@ export default function ProductForm({
     defaultValues: {
       name: product?.name || "",
       price: product?.price || 0,
-      discountedPrice:
-        typeof product?.discountedPrice === "number"
-          ? product.discountedPrice
-          : undefined,
+      discountedPrice: product?.discountedPrice || "",
+
       slug: product?.slug || "",
       description: product?.description || "",
       categoryId: product?.categoryId || "",
@@ -379,6 +381,9 @@ export default function ProductForm({
         attributes:
           Object.keys(attributesObj).length > 0 ? attributesObj : undefined,
         variants: Object.keys(variantsObj).length > 0 ? variantsObj : undefined,
+
+        discountedPrice:
+          data.discountedPrice === "" ? undefined : data.discountedPrice,
       };
 
       if (product) {
@@ -386,8 +391,9 @@ export default function ProductForm({
         const updateData = {
           ...productData,
           existingImages: existingImages, // Send existing images to keep
+          discountedPrice:
+            data.discountedPrice === "" ? null : data.discountedPrice,
         };
-
         await productApi.updateProduct(
           product.id!,
           updateData,
@@ -516,22 +522,17 @@ export default function ProductForm({
                       <FormControl>
                         <Input
                           type="number"
-                          step="0.01"
-                          min={0}
-                          placeholder="0.00"
+                          placeholder=""
                           value={field.value ?? ""}
                           onChange={(e) => {
                             const raw = e.target.value;
-
-                            // If the field is emptied, force it to undefined
                             if (raw === "") {
-                              field.onChange(undefined);
-                              return;
-                            }
-
-                            const value = Number.parseFloat(raw);
-                            if (!isNaN(value) && value >= 0) {
-                              field.onChange(value);
+                              field.onChange("");
+                            } else {
+                              const value = parseFloat(raw);
+                              if (!isNaN(value) && value >= 0) {
+                                field.onChange(value);
+                              }
                             }
                           }}
                         />

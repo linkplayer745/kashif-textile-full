@@ -42,16 +42,11 @@ export const productApi = {
 
     // Add product data
     Object.entries(productData).forEach(([key, value]) => {
-      if (
-        value !== undefined &&
-        value !== null &&
-        key !== "id" &&
-        key !== "images"
-      ) {
+      if (value !== undefined && key !== "id" && key !== "images") {
         if (key === "attributes" || key === "variants") {
           formData.append(key, JSON.stringify(value));
         } else {
-          formData.append(key, value.toString());
+          formData.append(key, value === null ? "null" : value.toString());
         }
       }
     });

@@ -14,13 +14,24 @@ export interface IProduct {
   name: string;
   price: number;
   slug: string;
-  discountedPrice?: number;
+  discountedPrice?: number | null;
   description: string;
   attributes: Record<string, string>;
   variants: Record<string, IVariantOption[]>; // Flexible variant keys
   images: string[];
 }
-
+export interface UpdateProductRequest {
+  categoryId: mongoose.Schema.Types.ObjectId;
+  name: string;
+  price: number;
+  slug: string;
+  discountedPrice?: number | null | 'null';
+  description: string;
+  attributes: Record<string, string>;
+  variants: Record<string, IVariantOption[]>; // Flexible variant keys
+  images: string[];
+  existingImages?: string[] | string;
+}
 // Mongoose Document and Model interfaces
 export interface IProductDocument extends IProduct, Document {}
 export interface IProductModel extends Model<IProductDocument> {
@@ -61,7 +72,7 @@ const productSchema = new mongoose.Schema<IProductDocument, IProductModel>(
     },
     discountedPrice: {
       type: Number,
-      min: 0,
+      default: null,
     },
     description: {
       type: String,
