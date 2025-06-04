@@ -62,14 +62,18 @@ const productSchema = z
       )
       .optional(),
   })
-  .refine(
-    (data) =>
-      data.discountedPrice === undefined || data.discountedPrice < data.price,
-    {
-      message: "Discounted price must be less than the original price",
-      path: ["discountedPrice"],
-    },
-  );
+  .superRefine((data, ctx) => {
+    if (
+      typeof data.discountedPrice === "number" &&
+      data.discountedPrice >= data.price
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Discounted price must be less than the original price",
+        path: ["discountedPrice"],
+      });
+    }
+  });
 
 type ProductFormData = z.infer<typeof productSchema>;
 
@@ -99,8 +103,10 @@ export default function ProductForm({
   const dispatch = useAppDispatch();
   const categories = useAppSelector((state) => state.category.categories);
 
-  const [images, setImages] = useState<File[]>([]);
-  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  // Separate state for existing images and new files
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [newImages, setNewImages] = useState<File[]>([]);
+  const [newImagePreviewUrls, setNewImagePreviewUrls] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const [attributes, setAttributes] = useState<AttributeItem[]>([]);
@@ -150,11 +156,13 @@ export default function ProductForm({
         setVariants(variantItems);
       }
 
+      // Set existing images
       if (product.images) {
-        setImagePreviewUrls(product.images);
+        setExistingImages(product.images);
       }
     }
   }, [product]);
+
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       if (name === "name") {
@@ -185,13 +193,13 @@ export default function ProductForm({
   // Cleanup object URLs to prevent memory leaks
   useEffect(() => {
     return () => {
-      imagePreviewUrls.forEach((url) => {
+      newImagePreviewUrls.forEach((url) => {
         if (url.startsWith("blob:")) {
           URL.revokeObjectURL(url);
         }
       });
     };
-  }, [imagePreviewUrls]);
+  }, [newImagePreviewUrls]);
 
   const loadCategories = async () => {
     try {
@@ -207,23 +215,33 @@ export default function ProductForm({
     const files = Array.from(e.target.files || []);
 
     // Add new files to existing ones
-    const newImages = [...images, ...files];
-    setImages(newImages);
+    const updatedNewImages = [...newImages, ...files];
+    setNewImages(updatedNewImages);
 
-    // Create preview URLs for all files
+    // Create preview URLs for new files only
     const newUrls = files.map((file) => URL.createObjectURL(file));
-    const allUrls = [...imagePreviewUrls, ...newUrls];
-    setImagePreviewUrls(allUrls);
+    const allNewUrls = [...newImagePreviewUrls, ...newUrls];
+    setNewImagePreviewUrls(allNewUrls);
 
     // Reset the input value to allow selecting the same files again
     e.target.value = "";
   };
 
-  const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
-    const newUrls = imagePreviewUrls.filter((_, i) => i !== index);
-    setImages(newImages);
-    setImagePreviewUrls(newUrls);
+  const removeExistingImage = (index: number) => {
+    const updatedExisting = existingImages.filter((_, i) => i !== index);
+    setExistingImages(updatedExisting);
+  };
+
+  const removeNewImage = (index: number) => {
+    const urlToRevoke = newImagePreviewUrls[index];
+    if (urlToRevoke && urlToRevoke.startsWith("blob:")) {
+      URL.revokeObjectURL(urlToRevoke);
+    }
+
+    const updatedNewImages = newImages.filter((_, i) => i !== index);
+    const updatedNewUrls = newImagePreviewUrls.filter((_, i) => i !== index);
+    setNewImages(updatedNewImages);
+    setNewImagePreviewUrls(updatedNewUrls);
   };
 
   const addAttribute = () => {
@@ -323,7 +341,9 @@ export default function ProductForm({
   };
 
   const onSubmit = async (data: ProductFormData) => {
-    if (!product && images.length === 0) {
+    // Check if we have at least one image (existing or new)
+    const totalImages = existingImages.length + newImages.length;
+    if (!product && totalImages === 0) {
       toast.error("Error", {
         description: "At least one image is required",
       });
@@ -362,14 +382,20 @@ export default function ProductForm({
       };
 
       if (product) {
+        // For updates, include existing images in the product data
+        const updateData = {
+          ...productData,
+          existingImages: existingImages, // Send existing images to keep
+        };
+
         await productApi.updateProduct(
           product.id!,
-          productData,
-          images.length > 0 ? images : undefined,
+          updateData,
+          newImages.length > 0 ? newImages : undefined,
         );
         toast.success("Product updated successfully");
       } else {
-        await productApi.addProduct(productData, images);
+        await productApi.addProduct(productData, newImages);
         toast.success("Product added successfully");
       }
 
@@ -382,6 +408,9 @@ export default function ProductForm({
       setIsLoading(false);
     }
   };
+
+  // Get total image count for display
+  const totalImages = existingImages.length + newImages.length;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-6">
@@ -490,16 +519,24 @@ export default function ProductForm({
                           step="0.01"
                           min={0}
                           placeholder="0.00"
-                          value={field.value || ""}
+                          value={field.value ?? ""}
                           onChange={(e) => {
-                            const value = e.target.value
-                              ? Number.parseFloat(e.target.value)
-                              : undefined;
-                            if (value !== undefined && value < 0) return;
-                            field.onChange(value);
+                            const raw = e.target.value;
+
+                            // If the field is emptied, force it to undefined
+                            if (raw === "") {
+                              field.onChange(undefined);
+                              return;
+                            }
+
+                            const value = Number.parseFloat(raw);
+                            if (!isNaN(value) && value >= 0) {
+                              field.onChange(value);
+                            }
                           }}
                         />
                       </FormControl>
+
                       <FormMessage />
                     </FormItem>
                   )}
@@ -548,28 +585,69 @@ export default function ProductForm({
                   </div>
                 </div>
 
-                {imagePreviewUrls.length > 0 && (
-                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                    {imagePreviewUrls.map((url, index) => (
-                      <div key={index} className="relative">
-                        <Image
-                          src={url || "/placeholder.svg"}
-                          alt={`Preview ${index + 1}`}
-                          width={200}
-                          height={200}
-                          className="h-32 w-full rounded-lg object-cover"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-2 right-2"
-                          onClick={() => removeImage(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                {totalImages > 0 && (
+                  <div className="space-y-4">
+                    {/* Existing Images */}
+                    {existingImages.length > 0 && (
+                      <div>
+                        <Label className="mb-2 block pt-1 pb-2 text-sm text-gray-600">
+                          Existing Images
+                        </Label>
+                        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                          {existingImages.map((url, index) => (
+                            <div key={`existing-${index}`} className="relative">
+                              <Image
+                                src={url || "/placeholder.svg"}
+                                alt={`Existing ${index + 1}`}
+                                width={200}
+                                height={200}
+                                className="h-32 w-full rounded-lg object-cover"
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="absolute top-2 right-2"
+                                onClick={() => removeExistingImage(index)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
+                    )}
+
+                    {/* New Images */}
+                    {newImagePreviewUrls.length > 0 && (
+                      <div>
+                        <Label className="mb-2 block pt-1 pb-2 text-sm text-gray-600">
+                          New Images
+                        </Label>
+                        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                          {newImagePreviewUrls.map((url, index) => (
+                            <div key={`new-${index}`} className="relative">
+                              <Image
+                                src={url || "/placeholder.svg"}
+                                alt={`New ${index + 1}`}
+                                width={200}
+                                height={200}
+                                className="h-32 w-full rounded-lg object-cover"
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="absolute top-2 right-2"
+                                onClick={() => removeNewImage(index)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
