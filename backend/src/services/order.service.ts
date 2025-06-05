@@ -130,10 +130,35 @@ const getUserOrderStats = async (userId: string | Types.ObjectId) => {
 
   return { totalOrders, pendingOrders };
 };
+
+const trackOrder = async (orderId: string) => {
+  if (!orderId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Order ID is required');
+  }
+
+  // Find order by ID
+  const order = await Order.findById(orderId).select(
+    'status shipping.fullName createdAt',
+  );
+  console.log(order);
+  if (!order) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Order not found');
+  }
+
+  const res = {
+    orderId: order._id,
+    status: order.status,
+    customerName: order.shipping.fullName,
+    orderDate: order.createdAt,
+  };
+
+  return res;
+};
 export default {
   getOrders,
   createOrder,
   updateOrderStatus,
   getOrdersByUserId,
   getUserOrderStats,
+  trackOrder,
 };

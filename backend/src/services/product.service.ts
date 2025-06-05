@@ -52,7 +52,7 @@ const addProduct = async (
     });
 
     return product;
-  } catch (error) {
+  } catch (error: any) {
     if (uploadedImages.length > 0) {
       await Promise.all(
         uploadedImages.map((img) =>
@@ -60,10 +60,9 @@ const addProduct = async (
         ),
       );
     }
-    console.log(error);
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      'Failed to create product. Cleanup performed.',
+      error.message || 'Something went wroingFailed to add product',
     );
   }
 };

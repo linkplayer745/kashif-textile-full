@@ -82,12 +82,19 @@ const getUserOrderStats = catchAsync(
   },
 );
 
+const trackOrder = catchAsync(async (req: Request, res: Response) => {
+  const { orderId } = req.params;
+
+  const order = await orderService.trackOrder(orderId);
+  res.status(httpStatus.OK).send(order);
+});
 const orderController = {
   updateOrderStatus,
   getOrders,
   createOrder,
   getOrdersByUserId,
   getUserOrderStats,
+  trackOrder,
 };
 
 export default orderController;

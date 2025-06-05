@@ -27,4 +27,7 @@ router.patch(
   validate(orderValidation.updateOrderStatus),
   orderController.updateOrderStatus,
 );
+
+router.get('/track-order/:orderId', orderController.trackOrder);
+
 export default router;

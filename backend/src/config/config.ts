@@ -43,7 +43,9 @@ export const config = {
   env: envVars.NODE_ENV as 'production' | 'development' | 'test',
   port: envVars.PORT,
   mongoose: {
-    url: envVars.MONGODB_URL + (envVars.NODE_ENV === 'test' ? '-test' : ''),
+    url:
+      envVars.MONGODB_URL +
+      (envVars.NODE_ENV === 'production' ? '-production' : '-development'),
     options: {
       serverSelectionTimeoutMS: 5000,
     },

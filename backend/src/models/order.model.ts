@@ -48,6 +48,7 @@ export interface IOrder {
   shippingCost: number;
   total: number;
   status: OrderStatus;
+  createdAt: Date;
 }
 
 export interface IOrderDocument extends IOrder, Document {}
