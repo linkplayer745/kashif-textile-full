@@ -135,12 +135,13 @@ const trackOrder = async (orderId: string) => {
   if (!orderId) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Order ID is required');
   }
-
+  if (!Types.ObjectId.isValid(orderId)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid Order ID');
+  }
   // Find order by ID
   const order = await Order.findById(orderId).select(
     'status shipping.fullName createdAt',
   );
-  console.log(order);
   if (!order) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Order not found');
   }

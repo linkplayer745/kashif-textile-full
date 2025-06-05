@@ -111,11 +111,19 @@ export default function CategoryManagementDialog() {
                 <TableBody>
                   {categories.map((category) => (
                     <TableRow key={category.id}>
-                      <TableCell className="font-medium">
+                      <TableCell
+                        className="truncate font-medium"
+                        style={{ maxWidth: "10ch" }}
+                      >
                         {category.name}
                       </TableCell>
-                      <TableCell>{category.slug || "-"}</TableCell>
-                      <TableCell className="max-w-xs truncate">
+                      <TableCell
+                        className="truncate"
+                        style={{ maxWidth: "10ch" }}
+                      >
+                        {category.slug || "-"}
+                      </TableCell>
+                      <TableCell className="max-w-[180px] truncate">
                         {category.description || "-"}
                       </TableCell>
                       <TableCell>
