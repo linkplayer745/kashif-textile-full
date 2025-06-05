@@ -19,8 +19,20 @@ import { FiLoader } from "react-icons/fi";
 import api from "@/utils/axiosInstance";
 import { addRecentlyViewedProduct } from "@/redux/slices/userSlice";
 import { Product } from "@/types";
-import { renderVariant } from "@/utils/renderVariant";
+import { renderVariant } from "@/components/ui/renderVariant";
+import BundleSelection from "@/components/bundle-selection";
+import { toast } from "sonner";
 
+// Add this interface near your other interfaces
+interface BundleItem {
+  id: string;
+  name: string;
+  price: number;
+  discountedPrice?: number;
+  quantity: number;
+  selectedVariants: Record<string, string>;
+  image: string;
+}
 export default function ProductPage() {
   const params = useParams();
   const dispatch = useAppDispatch();
@@ -34,7 +46,18 @@ export default function ProductPage() {
   >({});
   const [activeAccordian, setActiveAccordian] = useState<number | null>(0);
   const [isLoaded, setIsLoaded] = useState(false);
+  // In your ProductPage component, add this function after handleAddToCart:
+  const handleAddBundle = async (bundleItems: BundleItem[]) => {
+    // Add each bundle item to cart separately
+    for (const item of bundleItems) {
+      await dispatch(addToCart(item));
+    }
 
+    // Optional: Show bundle success message
+    toast.success(`Bundle of ${bundleItems.length} items added to cart!`, {
+      position: "bottom-right",
+    });
+  };
   useEffect(() => {
     const slug = params.slug as string;
 
@@ -291,6 +314,7 @@ export default function ProductPage() {
               </span>
             )}
           </div>
+          <BundleSelection product={product} onBundleAdd={handleAddBundle} />
 
           <div className="mb-4 flex items-center justify-between">
             <div className="font-medium">
@@ -301,20 +325,21 @@ export default function ProductPage() {
             </div>
           </div>
 
-          {product.variants &&
-            Object.keys(product.variants).map(
-              (variantType) =>
-                product.variants[variantType]?.length > 0 &&
-                renderVariant({
-                  variantType,
-                  options: product.variants[variantType],
-                  handleVariantSelect,
-                  selectedVariants,
-                  buttonsAlign: "center",
-                  headingAlign: "center",
-                }),
-            )}
-
+          <div className="grid grid-cols-2 gap-x-3 xl:gap-x-6">
+            {product.variants &&
+              Object.keys(product.variants).map(
+                (variantType) =>
+                  product.variants[variantType]?.length > 0 &&
+                  renderVariant({
+                    variantType,
+                    options: product.variants[variantType],
+                    handleVariantSelect,
+                    selectedVariants,
+                    buttonsAlign: "start",
+                    headingAlign: "start",
+                  }),
+              )}
+          </div>
           <div className="mt-4 mb-6">
             <p className="mb-2 text-center font-medium">Quantity</p>
             <div className="flex">

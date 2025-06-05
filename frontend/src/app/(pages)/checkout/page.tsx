@@ -13,7 +13,7 @@ import { z } from "zod";
 import api from "@/utils/axiosInstance";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import renderVariantInfo from "@/utils/renderVariantInfo";
+import renderVariantInfo from "@/components/ui/renderVariantInfo";
 import { CITIES, COUNTRIES, STATES } from "@/constants/address";
 
 // Zod validation schema
@@ -566,7 +566,7 @@ const CheckoutPage: React.FC = () => {
                 </button>
               </div>
               <div className="bg-light-platinum p-4">
-                <div className="text-dark-grey mb-6 w-full overflow-x-auto border-b px-2">
+                <div className="text-dark-grey mb-6 max-h-[500px] w-full overflow-x-auto overflow-y-auto border-b px-2 xl:max-h-[600px]">
                   <div className="min-w-[500px]">
                     <div className="border-platinum-2 mb-2 grid grid-cols-8 gap-2 border-b pb-2">
                       <div className="col-span-3 font-semibold">

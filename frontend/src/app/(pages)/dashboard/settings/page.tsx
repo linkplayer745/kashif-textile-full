@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,15 +22,20 @@ import {
   Phone,
   AlertCircle,
   RefreshCw,
+  Eye,
+  EyeOff,
+  Lock,
+  CheckCircle,
 } from "lucide-react";
 import {
+  changePassword,
   clearError,
   fetchUserProfile,
   updateUserProfile,
 } from "@/redux/slices/userSlice";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 
-// Zod validation schema
+// Zod validation schema for profile
 const userProfileSchema = z.object({
   name: z.string().optional(),
   details: z.object({
@@ -58,7 +63,26 @@ const userProfileSchema = z.object({
   }),
 });
 
+// Zod validation schema for password change
+const passwordChangeSchema = z
+  .object({
+    password: z.string().min(1, "Current password is required"),
+    newPassword: z
+      .string()
+      .min(8, "New password must be at least 8 characters")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+      ),
+    confirmPassword: z.string().min(1, "Please confirm your new password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
 type UserProfileFormData = z.infer<typeof userProfileSchema>;
+type PasswordChangeFormData = z.infer<typeof passwordChangeSchema>;
 
 const UserProfileForm = () => {
   const dispatch = useAppDispatch();
@@ -66,13 +90,18 @@ const UserProfileForm = () => {
     (state) => state.user,
   );
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors, isDirty },
-    watch,
-  } = useForm<UserProfileFormData>({
+  // Local state for password change
+  const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordChangeSuccess, setPasswordChangeSuccess] = useState(false);
+
+  // State for password visibility
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Profile form
+  const profileForm = useForm<UserProfileFormData>({
     resolver: zodResolver(userProfileSchema),
     defaultValues: {
       name: "",
@@ -87,6 +116,16 @@ const UserProfileForm = () => {
     },
   });
 
+  // Password change form
+  const passwordForm = useForm<PasswordChangeFormData>({
+    resolver: zodResolver(passwordChangeSchema),
+    defaultValues: {
+      password: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
   // Load user profile on component mount
   useEffect(() => {
     if (!currentUser) {
@@ -94,10 +133,10 @@ const UserProfileForm = () => {
     }
   }, [dispatch, currentUser]);
 
-  // Update form when user data changes
+  // Update profile form when user data changes
   useEffect(() => {
     if (currentUser) {
-      reset({
+      profileForm.reset({
         name: currentUser.name || "",
         details: currentUser.details || {
           phone: "",
@@ -109,21 +148,63 @@ const UserProfileForm = () => {
         },
       });
     }
-  }, [currentUser, reset]);
+  }, [currentUser, profileForm]);
 
-  // Clear error when component unmounts or user starts typing
+  // Clear error when component unmounts
   useEffect(() => {
     return () => {
       dispatch(clearError());
+      setPasswordError(null);
     };
   }, [dispatch]);
 
-  const onSubmit = async (data: UserProfileFormData) => {
+  // Clear password success message after 3 seconds
+  useEffect(() => {
+    if (passwordChangeSuccess) {
+      const timer = setTimeout(() => {
+        setPasswordChangeSuccess(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [passwordChangeSuccess]);
+
+  const onProfileSubmit = async (data: UserProfileFormData) => {
     dispatch(updateUserProfile(data));
+  };
+
+  const onPasswordSubmit = async (data: PasswordChangeFormData) => {
+    const { password, newPassword } = data;
+
+    setPasswordChangeLoading(true);
+    setPasswordError(null);
+    setPasswordChangeSuccess(false);
+
+    await dispatch(changePassword({ password, newPassword }))
+      .unwrap()
+      .then(() => {
+        setPasswordChangeSuccess(true);
+        passwordForm.reset();
+      })
+      .catch((error: any) => {
+        setPasswordError(error || "Failed to change password");
+      })
+      .finally(() => {
+        setPasswordChangeLoading(false);
+      });
   };
 
   const handleRefresh = () => {
     dispatch(fetchUserProfile());
+  };
+
+  // Clear password error when user starts typing
+  const clearPasswordError = () => {
+    if (passwordError) {
+      setPasswordError(null);
+    }
+    if (passwordChangeSuccess) {
+      setPasswordChangeSuccess(false);
+    }
   };
 
   // Show loading spinner while fetching initial data
@@ -142,6 +223,7 @@ const UserProfileForm = () => {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
+      {/* Profile Information Card */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -167,7 +249,10 @@ const UserProfileForm = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form
+            onSubmit={profileForm.handleSubmit(onProfileSubmit)}
+            className="space-y-6"
+          >
             {/* Error Alert */}
             {error && (
               <Alert className="border-red-200 bg-red-50">
@@ -190,35 +275,17 @@ const UserProfileForm = () => {
                   <Input
                     id="name"
                     type="text"
-                    {...register("name")}
+                    {...profileForm.register("name")}
                     placeholder="Enter your full name"
                     className="mt-1"
                     disabled={updateLoading}
                   />
-                  {errors.name && (
+                  {profileForm.formState.errors.name && (
                     <p className="mt-1 text-sm text-red-600">
-                      {errors.name.message}
+                      {profileForm.formState.errors.name.message}
                     </p>
                   )}
                 </div>
-
-                {/* Display email (read-only) */}
-                {currentUser?.email && (
-                  <div>
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={currentUser.email}
-                      className="mt-1 bg-gray-50"
-                      disabled
-                      readOnly
-                    />
-                    <p className="mt-1 text-sm text-gray-500">
-                      Email cannot be changed
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -235,14 +302,14 @@ const UserProfileForm = () => {
                   <Input
                     id="phone"
                     type="tel"
-                    {...register("details.phone")}
-                    placeholder="0333 1234567"
-                    className={`mt-1 ${errors.details?.phone ? "border-red-500" : ""}`}
+                    {...profileForm.register("details.phone")}
+                    placeholder="0333XXXXXXX"
+                    className={`mt-1 ${profileForm.formState.errors.details?.phone ? "border-red-500" : ""}`}
                     disabled={updateLoading}
                   />
-                  {errors.details?.phone && (
+                  {profileForm.formState.errors.details?.phone && (
                     <p className="mt-1 text-sm text-red-600">
-                      {errors.details.phone.message}
+                      {profileForm.formState.errors.details.phone.message}
                     </p>
                   )}
                 </div>
@@ -262,14 +329,14 @@ const UserProfileForm = () => {
                   <Input
                     id="address"
                     type="text"
-                    {...register("details.address")}
+                    {...profileForm.register("details.address")}
                     placeholder="123 Main Street, Apt 4B"
-                    className={`mt-1 ${errors.details?.address ? "border-red-500" : ""}`}
+                    className={`mt-1 ${profileForm.formState.errors.details?.address ? "border-red-500" : ""}`}
                     disabled={updateLoading}
                   />
-                  {errors.details?.address && (
+                  {profileForm.formState.errors.details?.address && (
                     <p className="mt-1 text-sm text-red-600">
-                      {errors.details.address.message}
+                      {profileForm.formState.errors.details.address.message}
                     </p>
                   )}
                 </div>
@@ -280,14 +347,14 @@ const UserProfileForm = () => {
                     <Input
                       id="city"
                       type="text"
-                      {...register("details.city")}
+                      {...profileForm.register("details.city")}
                       placeholder="Faisalabad"
-                      className={`mt-1 ${errors.details?.city ? "border-red-500" : ""}`}
+                      className={`mt-1 ${profileForm.formState.errors.details?.city ? "border-red-500" : ""}`}
                       disabled={updateLoading}
                     />
-                    {errors.details?.city && (
+                    {profileForm.formState.errors.details?.city && (
                       <p className="mt-1 text-sm text-red-600">
-                        {errors.details.city.message}
+                        {profileForm.formState.errors.details.city.message}
                       </p>
                     )}
                   </div>
@@ -297,14 +364,14 @@ const UserProfileForm = () => {
                     <Input
                       id="state"
                       type="text"
-                      {...register("details.state")}
+                      {...profileForm.register("details.state")}
                       placeholder="Punjab"
-                      className={`mt-1 ${errors.details?.state ? "border-red-500" : ""}`}
+                      className={`mt-1 ${profileForm.formState.errors.details?.state ? "border-red-500" : ""}`}
                       disabled={updateLoading}
                     />
-                    {errors.details?.state && (
+                    {profileForm.formState.errors.details?.state && (
                       <p className="mt-1 text-sm text-red-600">
-                        {errors.details.state.message}
+                        {profileForm.formState.errors.details.state.message}
                       </p>
                     )}
                   </div>
@@ -316,14 +383,14 @@ const UserProfileForm = () => {
                     <Input
                       id="country"
                       type="text"
-                      {...register("details.country")}
+                      {...profileForm.register("details.country")}
                       placeholder="Pakistan"
-                      className={`mt-1 ${errors.details?.country ? "border-red-500" : ""}`}
+                      className={`mt-1 ${profileForm.formState.errors.details?.country ? "border-red-500" : ""}`}
                       disabled={updateLoading}
                     />
-                    {errors.details?.country && (
+                    {profileForm.formState.errors.details?.country && (
                       <p className="mt-1 text-sm text-red-600">
-                        {errors.details.country.message}
+                        {profileForm.formState.errors.details.country.message}
                       </p>
                     )}
                   </div>
@@ -333,14 +400,17 @@ const UserProfileForm = () => {
                     <Input
                       id="postalCode"
                       type="text"
-                      {...register("details.postalCode")}
+                      {...profileForm.register("details.postalCode")}
                       placeholder="10001"
-                      className={`mt-1 ${errors.details?.postalCode ? "border-red-500" : ""}`}
+                      className={`mt-1 ${profileForm.formState.errors.details?.postalCode ? "border-red-500" : ""}`}
                       disabled={updateLoading}
                     />
-                    {errors.details?.postalCode && (
+                    {profileForm.formState.errors.details?.postalCode && (
                       <p className="mt-1 text-sm text-red-600">
-                        {errors.details.postalCode.message}
+                        {
+                          profileForm.formState.errors.details.postalCode
+                            .message
+                        }
                       </p>
                     )}
                   </div>
@@ -352,7 +422,7 @@ const UserProfileForm = () => {
             <div className="flex justify-end border-t border-gray-200 pt-6">
               <Button
                 type="submit"
-                disabled={updateLoading || !isDirty}
+                disabled={updateLoading || !profileForm.formState.isDirty}
                 className="w-full sm:w-auto"
               >
                 {updateLoading ? (
@@ -364,6 +434,179 @@ const UserProfileForm = () => {
                   <>
                     <Save className="mr-2 h-4 w-4" />
                     Save Changes
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Password Change Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5" />
+            Change Password
+          </CardTitle>
+          <CardDescription>
+            Update your password to keep your account secure
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+            className="space-y-6"
+          >
+            {/* Success Alert */}
+            {passwordChangeSuccess && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  Password changed successfully!
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Error Alert */}
+            {passwordError && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-red-800">
+                  {passwordError}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-4">
+              {/* Current Password */}
+              <div>
+                <Label htmlFor="currentPassword">Current Password *</Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="currentPassword"
+                    type={showCurrentPassword ? "text" : "password"}
+                    {...passwordForm.register("password")}
+                    placeholder="Enter your current password"
+                    className={`pr-10 ${passwordForm.formState.errors.password ? "border-red-500" : ""}`}
+                    disabled={passwordChangeLoading}
+                    onChange={(e) => {
+                      passwordForm.register("password").onChange(e);
+                      clearPasswordError();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+                {passwordForm.formState.errors.password && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {passwordForm.formState.errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              {/* New Password */}
+              <div>
+                <Label htmlFor="newPassword">New Password *</Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="newPassword"
+                    type={showNewPassword ? "text" : "password"}
+                    {...passwordForm.register("newPassword")}
+                    placeholder="Enter your new password"
+                    className={`pr-10 ${passwordForm.formState.errors.newPassword ? "border-red-500" : ""}`}
+                    disabled={passwordChangeLoading}
+                    onChange={(e) => {
+                      passwordForm.register("newPassword").onChange(e);
+                      clearPasswordError();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+                {passwordForm.formState.errors.newPassword && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {passwordForm.formState.errors.newPassword.message}
+                  </p>
+                )}
+                <p className="mt-1 text-sm text-gray-500">
+                  Password must be at least 8 characters with uppercase,
+                  lowercase, and number
+                </p>
+              </div>
+
+              {/* Confirm New Password */}
+              <div>
+                <Label htmlFor="confirmPassword">Confirm New Password *</Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    {...passwordForm.register("confirmPassword")}
+                    placeholder="Confirm your new password"
+                    className={`pr-10 ${passwordForm.formState.errors.confirmPassword ? "border-red-500" : ""}`}
+                    disabled={passwordChangeLoading}
+                    onChange={(e) => {
+                      passwordForm.register("confirmPassword").onChange(e);
+                      clearPasswordError();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+                {passwordForm.formState.errors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {passwordForm.formState.errors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-end border-t border-gray-200 pt-6">
+              <Button
+                type="submit"
+                disabled={
+                  passwordChangeLoading || !passwordForm.formState.isDirty
+                }
+                className="w-full sm:w-auto"
+              >
+                {passwordChangeLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Changing Password...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="mr-2 h-4 w-4" />
+                    Change Password
                   </>
                 )}
               </Button>

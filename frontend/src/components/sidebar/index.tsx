@@ -11,7 +11,7 @@ import { fetchCategories } from "@/redux/slices/categorySlice";
 
 const additionalLinks = [
   { title: "Made To Measure", path: "#" },
-  { title: "Order Tracking", path: "#" },
+  { title: "Order Tracking", path: "/track-order" },
   { title: "Shipping Policy", path: "#" },
   { title: "Wishlist", path: "/wishlist" },
 ];

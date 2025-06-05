@@ -8,7 +8,7 @@ import {
   increaseQuantity,
   removeFromCart,
 } from "@/redux/slices/cartSlice";
-import renderVariantInfo from "@/utils/renderVariantInfo";
+import renderVariantInfo from "@/components/ui/renderVariantInfo";
 
 const CartPage: React.FC = () => {
   const dispatch = useAppDispatch();

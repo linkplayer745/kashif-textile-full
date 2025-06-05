@@ -72,12 +72,10 @@ export const changePassword = createAsyncThunk(
   ) => {
     try {
       const response = await api.post("/auth/change-password", passwordData);
-      toast.success("Password changed successfully!");
       return response.data;
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "Failed to change password";
-      toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
   },
@@ -125,8 +123,6 @@ const userSlice = createSlice({
       state.error = null;
     },
     addRecentlyViewedProduct: (state, action: PayloadAction<string>) => {
-      console.log("adding product to recentlyViewedProducts", action.payload);
-
       if (!Array.isArray(state.recentlyViewedProducts)) {
         state.recentlyViewedProducts = [];
       }
@@ -170,19 +166,16 @@ const userSlice = createSlice({
       });
 
     // Change password cases
-    builder
-      .addCase(changePassword.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(changePassword.fulfilled, (state) => {
-        state.isLoading = false;
-        state.error = null;
-      })
-      .addCase(changePassword.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
+    // builder
+    //   .addCase(changePassword.pending, (state) => {
+    //     state.isLoading = true;
+    //   })
+    //   .addCase(changePassword.fulfilled, (state) => {
+    //     state.isLoading = false;
+    //   })
+    //   .addCase(changePassword.rejected, (state, action) => {
+    //     state.isLoading = false;
+    //   });
   },
 });
 

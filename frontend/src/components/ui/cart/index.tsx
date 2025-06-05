@@ -5,7 +5,7 @@ import {
   removeFromCart,
   formatVariantsForDisplay,
 } from "@/redux/slices/cartSlice";
-import renderVariantInfo from "@/utils/renderVariantInfo";
+import renderVariantInfo from "@/components/ui/renderVariantInfo";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState, useRef } from "react";

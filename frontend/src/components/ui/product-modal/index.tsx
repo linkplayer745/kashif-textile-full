@@ -6,7 +6,7 @@ import Link from "next/link";
 import { cn } from "@/utils/cn";
 import { Product, VariantOption } from "@/types";
 import { useAppDispatch } from "@/redux/hooks";
-import { renderVariant } from "@/utils/renderVariant";
+import { renderVariant } from "@/components/ui/renderVariant";
 
 interface ProductModalProps {
   isOpen: boolean;
